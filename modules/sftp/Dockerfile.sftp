@@ -1,0 +1,9 @@
+FROM ubuntu:20.04
+RUN groupadd -g 1000 webgroup && useradd -u 1000 -g webgroup -m webuser
+RUN mkdir -p /home/webuser/.ssh
+RUN mkdir -p /home/webuser/html
+RUN apt update; DEBIAN_FRONTEND=noninteractive apt install -yq openssh-server; chmod 755 /home/webuser; chown webuser:webgroup /run
+COPY sftp_entrypoint.sh /entrypoint.sh
+EXPOSE 22
+USER root
+ENTRYPOINT /entrypoint.sh

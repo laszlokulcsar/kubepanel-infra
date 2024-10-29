@@ -1,0 +1,8 @@
+FROM ubuntu:latest
+RUN apt update; DEBIAN_FRONTEND=noninteractive apt install -yq opendkim openssl; mkdir /etc/opendkim
+COPY TrustedHosts /etc/opendkim/TrustedHosts
+COPY opendkim.conf /etc/opendkim.conf
+COPY opendkim /etc/default/opendkim
+COPY opendkim_entrypoint.sh /entrypoint.sh
+EXPOSE 8891
+ENTRYPOINT /entrypoint.sh

@@ -1,0 +1,6 @@
+FROM ubuntu:latest
+RUN apt update; DEBIAN_FRONTEND=noninteractive apt install -yq postfix
+COPY postfix.conf /etc/postfix/main.cf
+COPY smtp_entrypoint.sh /entrypoint.sh
+EXPOSE 25
+ENTRYPOINT /entrypoint.sh

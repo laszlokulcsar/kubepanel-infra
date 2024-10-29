@@ -1,0 +1,4 @@
+FROM ubuntu:latest
+RUN apt update -y; apt install mysql-client -y
+COPY create_db.sh /create_db.sh
+COPY delete_db.sh /delete_db.sh

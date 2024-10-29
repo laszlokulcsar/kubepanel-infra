@@ -1,0 +1,371 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubepanel
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: kubepanel-sc
+provisioner: microk8s.io/hostpath
+reclaimPolicy: Retain
+parameters:
+  pvDir: /kubepanel-storage
+volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kubepanel
+  namespace: kubepanel
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: kubepanel-sc  # This must match the PV's storageClassName
+  resources: { requests: { storage: 5Gi } }
+  #removed to automatically create the PV #volumeName: kubepanel
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubepanel
+  namespace: kubepanel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubepanel
+  template:
+    metadata:
+      labels:
+        app: kubepanel
+    spec:
+      #automountServiceAccountToken: false
+      volumes:
+      - name: kubepanel
+        persistentVolumeClaim:
+          claimName: kubepanel
+      - persistentVolumeClaim:
+          claimName: dkim-privkeys-pvc
+        name: dkim-privkeys
+      initContainers:
+      - name: init
+        image: docker.io/laszlokulcsar/init:v0.1
+        env:
+        - name: DJANGO_SUPERUSER_EMAIL
+          value: "<DJANGO_SUPERUSER_EMAIL>"
+        - name: DJANGO_SUPERUSER_USERNAME
+          value: "<DJANGO_SUPERUSER_USERNAME>"
+        - name: DJANGO_SUPERUSER_PASSWORD
+          value: "<DJANGO_SUPERUSER_PASSWORD>"
+        - name: KUBEPANEL_DOMAIN
+          value: "<KUBEPANEL_DOMAIN>"
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: kubepanel
+          mountPath: /kubepanel
+        - name: dkim-privkeys
+          mountPath: /dkim-privkeys
+      containers:
+      - name: dashboard
+        image: docker.io/laszlokulcsar/dashboard:v0.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: kubepanel
+          mountPath: /kubepanel
+        - name: dkim-privkeys
+          mountPath: /dkim-privkeys
+      - name: watchdog
+        image: docker.io/laszlokulcsar/watchdog:v0.1
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: kubepanel
+          mountPath: /kubepanel
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubepanel
+  namespace: kubepanel
+spec:
+  type: ClusterIP
+  selector:
+    app: kubepanel
+  ports:
+  - name: django
+    port: 8000
+    targetPort: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress
+  namespace: kubepanel
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: public
+  tls:
+  - hosts:
+    - <KUBEPANEL_DOMAIN>
+    secretName: kubepanel-cert
+  rules:
+  - host: "<KUBEPANEL_DOMAIN>"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: kubepanel
+            port:
+              number: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opendkim
+  namespace: kubepanel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opendkim
+  template:
+    metadata:
+      labels:
+        app: opendkim
+    spec:
+     initContainers:
+     - name: chmod-keys
+       image: ubuntu:latest
+       command: ["sh","-c","chown -R 100:101 /etc/opendkim/ && chmod -R 700 /etc/opendkim/"]
+       volumeMounts:
+       - name: dkim-privkeys
+         mountPath: "/etc/opendkim/keys/"
+     containers:
+      - name: opendkim
+        image: docker.io/laszlokulcsar/opendkim:v0.1
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: dkim-keytable
+          mountPath: "/etc/opendkim/KeyTable"
+          subPath: "KeyTable"
+        - name: dkim-signingtable
+          mountPath: "/etc/opendkim/SigningTable"
+          subPath: "SigningTable"
+        - name: dkim-privkeys
+          mountPath: "/etc/opendkim/keys/"
+          readOnly: true
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8891
+     volumes:
+     - configMap:
+         name: dkim-keytable
+       name: dkim-keytable
+     - configMap:
+         name: dkim-signingtable
+       name: dkim-signingtable
+     - persistentVolumeClaim:
+         claimName: dkim-privkeys-pvc
+       name: dkim-privkeys
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dkim-privkeys-pvc
+  namespace: kubepanel
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: kubepanel-sc  # This must match the PV's storageClassName
+  resources:
+    requests:
+      storage: 10Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opendkim
+  namespace: kubepanel
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: opendkim
+    port: 8891
+    protocol: TCP
+    targetPort: 8891
+  selector:
+    app: opendkim
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: <DJANGO_SUPERUSER_EMAIL>
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      # Secret resource that will be used to store the account's private key.
+      name: letsencrypt-account-key
+    # Add a single challenge solver, HTTP01 using nginx
+    solvers:
+    - http01:
+        ingress:
+          ingressClassName: public
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smtp
+  namespace: kubepanel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smtp
+  template:
+    metadata:
+      labels:
+        app: smtp
+    spec:
+     containers:
+      - name: smtp
+        image: docker.io/laszlokulcsar/smtp:v0.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 25
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smtp
+  namespace: kubepanel
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: smtp
+    port: 25
+    protocol: TCP
+    targetPort: 25
+  selector:
+    app: smtp
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+  namespace: kubepanel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      volumes:
+      - name: mariadb-data
+        persistentVolumeClaim:
+          claimName: mariadb-pvc
+      containers:
+      - name: mariadb
+        image: mariadb
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mariadb-data
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          value: "<MARIADB_ROOT_PASSWORD>"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mariadb-pvc
+  namespace: kubepanel
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: kubepanel-sc
+  resources: { requests: { storage: 50Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  namespace: kubepanel
+spec:
+  selector:
+    app: mariadb
+  ports:
+  - port: 3306
+    protocol: TCP
+    targetPort: 3306
+    name: mariadb
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mariadb-auth
+  namespace: kubepanel
+type: kubernetes.io/basic-auth
+stringData:
+  username: root 
+  password: <MARIADB_ROOT_PASSWORD>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smtp-conf
+  namespace: kubepanel
+data:
+  postfix.conf: |-
+    smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+    biff = no
+    append_dot_mydomain = no
+    readme_directory = no
+    compatibility_level = 3.6
+    smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+    smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+    smtpd_tls_security_level=may
+    smtp_tls_CApath=/etc/ssl/certs
+    smtp_tls_security_level=may
+    smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+    smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+    myhostname = <KUBEPANEL_DOMAIN>
+    alias_maps = hash:/etc/aliases
+    alias_database = hash:/etc/aliases
+    mydestination = $myhostname, localhost, localhost.localdomain, , localhost
+    relayhost =
+    mynetworks = 10.0.0.0/8 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+    mailbox_size_limit = 0
+    recipient_delimiter = +
+    inet_interfaces = all
+    inet_protocols = all
+    smtpd_milters = inet:opendkim.kubepanel.svc.cluster.local:8891
+    non_smtpd_milters       = $smtpd_milters
+    milter_default_action   = accept
+    maillog_file = /var/log/postfix.log

@@ -1,0 +1,32 @@
+# Use Ubuntu as the base image
+FROM ubuntu:20.04
+
+# Prevent Ubuntu's apt-get from prompting for input (e.g., timezone data)
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Nginx, PHP-FPM, and necessary PHP extensions
+RUN apt-get update && apt-get install -y \
+    nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a new user and group (non-root)
+RUN groupadd -g 1000 webgroup && \
+    useradd -u 1000 -g webgroup -m webuser
+
+# Change ownership of the nginx and php directories to the new user
+RUN chown -R webuser:webgroup /var/www/html /var/log/nginx /var/lib/nginx /var/run /run 
+
+# Setup document root
+RUN mkdir -p /var/www/html/
+
+# Adjust permissions to allow Nginx and PHP-FPM to access the document root
+RUN chown -R webuser:webgroup /var/www/html
+
+# Run Nginx and PHP-FPM as non-root user
+USER webuser
+
+# Expose port 8080 for Nginx (non-root users can't bind to ports below 1024)
+EXPOSE 8080
+# Start Nginx and PHP-FPM on container start
+CMD ["sh", "-c", "nginx -g 'daemon off;'"]
+
