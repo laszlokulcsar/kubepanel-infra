@@ -1,5 +1,9 @@
 #!/bin/bash
-source .config_variable
+if [ "$1" == "dev" ]; then
+    GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/dev/kubepanel-install.yaml"
+else
+    GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/main/kubepanel-install.yaml"
+fi
 prompt_user_input() {
     local prompt_message=$1
     local var_name=$2
