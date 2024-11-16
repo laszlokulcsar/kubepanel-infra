@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ "$1" == "dev" ]; then
+    GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/dev/kubepanel-install.yaml"
+else
+    GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/main/kubepanel-install.yaml"
+fi
 prompt_user_input() {
     local prompt_message=$1
     local var_name=$2
@@ -53,7 +58,6 @@ main() {
     sudo microk8s enable hostpath-storage
     sudo microk8s enable ingress
     sudo microk8s enable cert-manager
-    GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/main/kubepanel-install.yaml"
     YAML_FILE="kubepanel-install.yaml"
     prompt_user_input "Enter Superuser email address: " DJANGO_SUPERUSER_EMAIL
     prompt_user_input "Enter Superuser username: " DJANGO_SUPERUSER_USERNAME
