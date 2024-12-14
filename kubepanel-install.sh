@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$1" == "dev" ]; then
-    GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/dev/kubepanel-install.yaml"
+    GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/v0.2/kubepanel-install.yaml"
 else
     GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/main/kubepanel-install.yaml"
 fi
