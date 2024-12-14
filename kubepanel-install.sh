@@ -83,6 +83,7 @@ main() {
     sudo microk8s status --wait-ready
     sudo microk8s enable ingress
     sudo microk8s enable cert-manager
+    sudo microk8s config > .kube/config
 
     generate_join_command
     wait_for_ha_status
