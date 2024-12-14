@@ -1,9 +1,11 @@
 #!/bin/bash
+
 if [ "$1" == "dev" ]; then
     GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/dev/kubepanel-install.yaml"
 else
     GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/main/kubepanel-install.yaml"
 fi
+
 prompt_user_input() {
     local prompt_message=$1
     local var_name=$2
@@ -51,21 +53,55 @@ check_deployment_status() {
     done
 }
 
+generate_join_command() {
+    echo "Generating join command..."
+    # Generate a token with a longer TTL (e.g., 1 hour) so multiple nodes can join using the same token
+    JOIN_COMMAND=$(microk8s add-node --token-ttl 3600)
+    echo "Please run the following command(s) on the other nodes to join them to the cluster:"
+    echo "$JOIN_COMMAND"
+}
+
+wait_for_ha_status() {
+    echo "Waiting for the cluster to achieve high availability..."
+    while true; do
+        HA_STATUS=$(microk8s status | grep 'high-availability' | awk '{print $2}')
+        if [ "$HA_STATUS" == "yes" ]; then
+            echo "$(date): High Availability is enabled."
+            break
+        else
+            echo "$(date): High Availability is not yet enabled. Waiting for nodes to join..."
+        fi
+        sleep 15
+    done
+}
+
 main() {
+    sudo systemctl stop multipathd && sudo systemctl disable multipathd
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /bin
     sudo apt update && sudo snap install microk8s --classic --channel=1.31
     echo "MicroK8S has been installed, waiting to be ready..."
     sudo microk8s status --wait-ready
-    sudo microk8s enable hostpath-storage
     sudo microk8s enable ingress
     sudo microk8s enable cert-manager
+
+    generate_join_command
+    wait_for_ha_status
+    vgcreate linstorvg /dev/sdb
+    lvcreate -l100%FREE -T linstorvg/linstorlv
+    kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2"
+    kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
+    kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
+    echo "Software Defined Storage component has been installed, waiting to be ready... It can take up to 10-15 minutes..."
+    kubectl wait pod --for=condition=Ready -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
     YAML_FILE="kubepanel-install.yaml"
-    prompt_user_input "Enter Superuser email address: " DJANGO_SUPERUSER_EMAIL
-    prompt_user_input "Enter Superuser username: " DJANGO_SUPERUSER_USERNAME
-    prompt_user_input "Enter Superuser password: " DJANGO_SUPERUSER_PASSWORD
-    prompt_user_input "Enter Kubepanel domain name: " KUBEPANEL_DOMAIN
+    prompt_user_input "Enter Superuser email address" DJANGO_SUPERUSER_EMAIL
+    prompt_user_input "Enter Superuser username" DJANGO_SUPERUSER_USERNAME
+    prompt_user_input "Enter Superuser password" DJANGO_SUPERUSER_PASSWORD
+    prompt_user_input "Enter Kubepanel domain name" KUBEPANEL_DOMAIN
     download_yaml "$GITHUB_URL" "$YAML_FILE"
     replace_placeholders "$YAML_FILE" "$DJANGO_SUPERUSER_EMAIL" "$DJANGO_SUPERUSER_USERNAME" "$DJANGO_SUPERUSER_PASSWORD" "$KUBEPANEL_DOMAIN"
     microk8s kubectl apply -f $YAML_FILE
     check_deployment_status
 }
 main
+

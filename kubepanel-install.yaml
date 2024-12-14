@@ -3,15 +3,49 @@ kind: Namespace
 metadata:
   name: kubepanel
 ---
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
 metadata:
-  name: kubepanel-sc
-provisioner: microk8s.io/hostpath
-reclaimPolicy: Retain
-parameters:
-  pvDir: /kubepanel-storage
+  name: linstorcluster
+spec: {}
+---
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  patches:
+    - target:
+        name: linstor-csi-node
+        kind: DaemonSet
+      patch: |
+        apiVersion: apps/v1
+        kind: DaemonSet
+        metadata:
+          name: linstor-csi-node
+        spec:
+          template:
+            spec:
+              containers:
+              - name: linstor-csi
+                volumeMounts:
+                - mountPath: /var/lib/kubelet
+                  name: publish-dir
+                  $patch: delete
+                - mountPath: /var/snap/microk8s/common/var/lib/kubelet
+                  name: publish-dir
+                  mountPropagation: Bidirectional
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: linstor-sc
+provisioner: linstor.csi.linbit.com
+allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
+parameters:
+  linstor.csi.linbit.com/storagePool: pool1
+  linstor.csi.linbit.com/placementCount: "3"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -20,9 +54,8 @@ metadata:
   namespace: kubepanel
 spec:
   accessModes: [ReadWriteMany]
-  storageClassName: kubepanel-sc  # This must match the PV's storageClassName
-  resources: { requests: { storage: 5Gi } }
-  #removed to automatically create the PV #volumeName: kubepanel
+  storageClassName: linstor-sc  # This must match the PV's storageClassName
+  resources: { requests: { storage: 1Gi } }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -180,7 +213,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: kubepanel-sc  # This must match the PV's storageClassName
+  storageClassName: linstor-sc  # This must match the PV's storageClassName
   resources:
     requests:
       storage: 10Mi
@@ -309,7 +342,7 @@ metadata:
   namespace: kubepanel
 spec:
   accessModes: [ReadWriteOnce]
-  storageClassName: kubepanel-sc
+  storageClassName: linstor-sc
   resources: { requests: { storage: 50Gi } }
 ---
 apiVersion: v1
