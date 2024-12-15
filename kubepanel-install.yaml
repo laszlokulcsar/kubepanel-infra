@@ -36,6 +36,17 @@ spec:
                   name: publish-dir
                   mountPropagation: Bidirectional
 ---
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: storage-pool
+spec:
+  storagePools:
+    - name: pool1
+      lvmThinPool:
+        thinPool: linstorlv
+        volumeGroup: linstorvg
+---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -72,6 +83,13 @@ spec:
       labels:
         app: kubepanel
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: opendkim
+            topologyKey: "kubernetes.io/hostname"
       #automountServiceAccountToken: false
       volumes:
       - name: kubepanel
