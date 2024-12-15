@@ -5,8 +5,10 @@ DIR="/kubepanel"
 # Check if directory exists
 if [ -d "$DIR" ]; then
     # Check if directory is empty
-    if [ -z "$(ls -A $DIR)" ]; then
+    entries=$(ls -A "$DIR")
+    if [ "$entries" = "lost+found" ]; then
         echo "Directory is empty. Cloning repository..."
+        rmdir "$DIR/lost+found"
         git clone https://github.com/laszlokulcsar/kubepanel.git "$DIR"
         mkdir $DIR/yaml_templates
         #DJANGO_SUPERUSER_EMAIL DJANGO_SUPERUSER_USERNAME DJANGO_SUPERUSER_PASSWORD KUBEPANEL_DOMAIN env variables should be set for the following command

@@ -361,7 +361,7 @@ metadata:
 spec:
   accessModes: [ReadWriteOnce]
   storageClassName: linstor-sc
-  resources: { requests: { storage: 50Gi } }
+  resources: { requests: { storage: 5Gi } }
 ---
 apiVersion: v1
 kind: Service
