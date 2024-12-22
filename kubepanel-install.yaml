@@ -116,6 +116,7 @@ spec:
           mountPath: /kubepanel
         - name: dkim-privkeys
           mountPath: /dkim-privkeys
+        restartPolicy: Never
       containers:
       - name: dashboard
         image: docker.io/laszlokulcsar/dashboard:v0.1
