@@ -51,7 +51,6 @@ spec:
       - name: init
         image: docker.io/laszlokulcsar/init:v0.1
         env:
-        restartPolicy: Never
         - name: DJANGO_SUPERUSER_EMAIL
           value: "<DJANGO_SUPERUSER_EMAIL>"
         - name: DJANGO_SUPERUSER_USERNAME
