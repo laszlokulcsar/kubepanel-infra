@@ -101,6 +101,7 @@ spec:
       initContainers:
       - name: init
         image: docker.io/laszlokulcsar/init:v0.1
+        restartPolicy: Never
         env:
         - name: DJANGO_SUPERUSER_EMAIL
           value: "<DJANGO_SUPERUSER_EMAIL>"
