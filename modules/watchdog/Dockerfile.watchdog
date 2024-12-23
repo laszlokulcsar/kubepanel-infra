@@ -1,5 +1,6 @@
 FROM python:latest
 RUN cd /bin; curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"; chmod +x /bin/kubectl
+RUN pip install Django cryptography
 USER root
 COPY watchdog_entrypoint.sh /entrypoint.sh
 ENTRYPOINT /entrypoint.sh

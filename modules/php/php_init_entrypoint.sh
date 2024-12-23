@@ -14,6 +14,7 @@ if [ "${WP_PREINSTALL:-}" = "True" ]; then
         unzip -qo /tmp/wordpress.zip -d /tmp
         mv /tmp/wordpress/* /usr/share/nginx/html/
         rm -rf /tmp/wordpress /tmp/wordpress.zip
+        chown -R 1000:1000 /usr/share/nginx/html
         echo "WordPress installation completed successfully."
     else
         echo "/usr/share/nginx/html is not empty. Skipping WordPress installation."
