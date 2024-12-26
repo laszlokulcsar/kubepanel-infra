@@ -1,4 +1,7 @@
 FROM ubuntu:latest
-RUN apt update -y; apt install mysql-client -y
+RUN apt update -y; apt install curl mysql-client python3-full python3-pip -y
+RUN cd /bin && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x /bin/kubectl
+RUN pip install Django cryptography --break-system-packages
 COPY create_db.sh /create_db.sh
 COPY delete_db.sh /delete_db.sh
+COPY backup_db.sh /backup_db.sh
