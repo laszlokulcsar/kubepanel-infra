@@ -1,5 +1,6 @@
 # Use Ubuntu as the base image
 FROM python:latest
+RUN apt update -y; apt install mariadb-client -y
 RUN pip install mysqlclient Django cryptography requests geoip2 cloudflare
 RUN mkdir -p /kubepanel/
 RUN mkdir -p /root/.ssh/

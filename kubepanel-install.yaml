@@ -124,6 +124,8 @@ spec:
           value: "<KUBEPANEL_DOMAIN>"
         - name: DBNAME
           value: "kubepanel"
+        - name: MARIADB_ROOT_PASSWORD
+          value: "<MARIADB_ROOT_PASSWORD>"
         imagePullPolicy: Always
         volumeMounts:
         - name: kubepanel
