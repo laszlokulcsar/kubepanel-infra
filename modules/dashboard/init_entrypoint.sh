@@ -1,7 +1,7 @@
 #!/bin/bash
 # Directory to check
 DIR="/kubepanel"
-
+mysql -h mariadb.kubepanel.svc.cluster.local -uroot -p$MARIADB_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $DBNAME; GRANT ALL PRIVILEGES ON $DBNAME.* TO $DBNAME@'%' IDENTIFIED BY '$MARIADB_ROOT_PASSWORD'"
 # Check if directory exists
 if [ -d "$DIR" ]; then
     # Check if directory is empty

@@ -99,6 +99,18 @@ spec:
           claimName: dkim-privkeys-pvc
         name: dkim-privkeys
       initContainers:
+      - name: wait-for-mariadb
+        image: busybox:1.36
+        command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for MariaDB to be ready...";
+            until nc -z mariadb.kubepanel.svc.cluster.local 3306; do
+              echo "MariaDB not ready, sleeping...";
+              sleep 2;
+            done
+            echo "MariaDB is up!"
       - name: init
         image: docker.io/laszlokulcsar/init:v0.1
         env:
@@ -110,6 +122,8 @@ spec:
           value: "<DJANGO_SUPERUSER_PASSWORD>"
         - name: KUBEPANEL_DOMAIN
           value: "<KUBEPANEL_DOMAIN>"
+        - name: DBNAME
+          value: "kubepanel"
         imagePullPolicy: Always
         volumeMounts:
         - name: kubepanel
