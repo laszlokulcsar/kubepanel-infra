@@ -1,6 +1,6 @@
 # Use Ubuntu as the base image
 FROM python:latest
-RUN pip install Django cryptography
+RUN pip install mysqlclient Django cryptography requests geoip2 cloudflare
 RUN mkdir -p /kubepanel/
 RUN mkdir -p /root/.ssh/
 RUN ssh-keyscan github.com >> /root/.ssh/known_hosts;

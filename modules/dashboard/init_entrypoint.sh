@@ -17,6 +17,7 @@ if [ -d "$DIR" ]; then
         /usr/local/bin/python $DIR/manage.py createsuperuser --noinput
         /usr/local/bin/python $DIR/manage.py firstrun -d $KUBEPANEL_DOMAIN
     else
+        echo $(date)
         echo "Directory is not empty."
     fi
 else

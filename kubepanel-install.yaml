@@ -101,7 +101,6 @@ spec:
       initContainers:
       - name: init
         image: docker.io/laszlokulcsar/init:v0.1
-        restartPolicy: Never
         env:
         - name: DJANGO_SUPERUSER_EMAIL
           value: "<DJANGO_SUPERUSER_EMAIL>"
@@ -421,3 +420,30 @@ data:
     non_smtpd_milters       = $smtpd_milters
     milter_default_action   = accept
     maillog_file = /var/log/postfix.log
+---
+apiVersion: v1
+data:
+  hsts: "false"
+  proxy-body-size: 100M
+  ssl-redirect: "false"
+  enable-modsecurity: "true"
+  enable-owasp-modsecurity-crs: "false"
+  log-format-upstream: '{"time": "$time_iso8601", "remote_addr": "$proxy_protocol_addr",
+    "x_forwarded_for": "$proxy_add_x_forwarded_for", "request_id": "$req_id", "remote_user":
+    "$remote_user", "bytes_sent": $bytes_sent, "request_time": $request_time, "status":
+    $status, "vhost": "$host", "request_proto": "$server_protocol", "path": "$uri",
+    "request_query": "$args", "request_length": $request_length, "duration": $request_time,"method":
+    "$request_method", "http_referrer": "$http_referer", "http_user_agent": "$http_user_agent",
+    "request_body": "$request_body" }'
+  modsecurity-snippet: |
+    SecRuleEngine On
+    SecAuditLog /var/log/nginx/modsec_audit/
+    SecAuditLogFormat JSON
+    SecAuditEngine RelevantOnly
+    SecAuditLogParts ABCEFHZ
+    SecAuditLogType Serial
+    Include /etc/nginx/modsec/custom-rules.conf
+kind: ConfigMap
+metadata:
+  name: nginx-load-balancer-microk8s-conf
+  namespace: ingress

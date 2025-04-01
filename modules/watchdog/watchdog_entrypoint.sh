@@ -15,7 +15,7 @@ do
             rm -rf "$dir"
         fi
     done
-
+    python3 /kubepanel/manage.py check_status
     # Sleep for 5 seconds between cycles
     sleep 5
 done
