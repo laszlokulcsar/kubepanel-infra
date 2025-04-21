@@ -31,11 +31,23 @@ replace_placeholders() {
     local domain=$5
     local mariadbpass=$(openssl rand -base64 15)
 
+    mapfile -t node_ips < <(kubectl get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="ExternalIP")].address}{"\n"}{end}' | head -n 3)
+    # Fallback to InternalIP if ExternalIP not present
+    if [ "${#node_ips[@]}" -lt 3 ]; then
+        mapfile -t node_ips < <(kubectl get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 3)
+    fi
+    local node1_ip=${node_ips[0]}
+    local node2_ip=${node_ips[1]}
+    local node3_ip=${node_ips[2]}
+
     sed -i "s,<DJANGO_SUPERUSER_EMAIL>,$email,g" "$file"
     sed -i "s,<DJANGO_SUPERUSER_USERNAME>,$username,g" "$file"
     sed -i "s,<DJANGO_SUPERUSER_PASSWORD>,$password,g" "$file"
     sed -i "s,<KUBEPANEL_DOMAIN>,$domain,g" "$file"
     sed -i "s,<MARIADB_ROOT_PASSWORD>,$mariadbpass,g" "$file"
+    sed -i "s,<NODE_1_IP>,$node1_ip,g" "$file"
+    sed -i "s,<NODE_2_IP>,$node2_ip,g" "$file"
+    sed -i "s,<NODE_3_IP>,$node3_ip,g" "$file"
 }
 
 check_deployment_status() {

@@ -126,6 +126,12 @@ spec:
           value: "kubepanel"
         - name: MARIADB_ROOT_PASSWORD
           value: "<MARIADB_ROOT_PASSWORD>"
+        - name: NODE_1_IP
+          value: "<NODE_1_IP>"
+        - name: NODE_2_IP
+          value: "NODE_2_IP"
+        - name: NODE_3_IP
+          value: "NODE_3_IP"
         imagePullPolicy: Always
         volumeMounts:
         - name: kubepanel
@@ -315,6 +321,28 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 25
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          value: "<MARIADB_ROOT_PASSWORD>"
+        volumeMounts:
+        - name: smtp-conf
+          mountPath: /etc/postfix/main.cf
+          subPath: main.cf
+        - name: smtp-conf
+          mountPath: /etc/postfix/mysql-virtual-alias-maps.cf
+          subPath: mysql-virtual-alias-maps.cf
+        - name: smtp-conf
+          mountPath: /etc/postfix/mysql-virtual-mailbox-domains.cf
+          subPath: mysql-virtual-mailbox-domains.cf
+        - name: smtp-conf
+          mountPath: /etc/postfix/mysql-virtual-mailbox-maps.cf
+          subPath: mysql-virtual-mailbox-maps.cf
+        - name: smtp-conf
+          mountPath: /etc/dovecot/dovecot-sql.conf.ext
+          subPath: dovecot-sql.conf.ext
+        - name: smtp-conf
+          mountPath: /etc/dovecot/conf.d/10-mail.conf
+          subPath: 10-mail.conf
 ---
 apiVersion: v1
 kind: Service
@@ -322,6 +350,7 @@ metadata:
   name: smtp
   namespace: kubepanel
 spec:
+  externalTrafficPolicy: Local
   internalTrafficPolicy: Cluster
   ipFamilies:
   - IPv4
@@ -335,6 +364,10 @@ spec:
     app: smtp
   sessionAffinity: None
   type: ClusterIP
+  externalIPs:
+  - <NODE_1_IP>
+  - <NODE_2_IP>
+  - <NODE_3_IP>
 status:
   loadBalancer: {}
 ---
@@ -409,7 +442,7 @@ metadata:
   name: smtp-conf
   namespace: kubepanel
 data:
-  postfix.conf: |-
+  main.cf: |-
     smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
     biff = no
     append_dot_mydomain = no
@@ -423,6 +456,8 @@ data:
     smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
     smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
     myhostname = <KUBEPANEL_DOMAIN>
+    mydomain = <KUBEPANEL_DOMAIN>
+    myorigin = $mydomain
     alias_maps = hash:/etc/aliases
     alias_database = hash:/etc/aliases
     mydestination = $myhostname, localhost, localhost.localdomain, , localhost
@@ -436,6 +471,69 @@ data:
     non_smtpd_milters       = $smtpd_milters
     milter_default_action   = accept
     maillog_file = /var/log/postfix.log
+    virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
+    virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
+    virtual_alias_maps = mysql:/etc/postfix/mysql-virtual-alias-maps.cf
+    virtual_transport = lmtp:unix:private/dovecot-lmtp
+  mysql-virtual-mailbox-maps.cf: |-
+    user = kubepanel
+    password = <MARIADB_ROOT_PASSWORD>
+    hosts = mariadb.kubepanel.svc.cluster.local
+    dbname = kubepanel
+    query = SELECT CONCAT(dashboard_domain.domain_name, '/', dashboard_mailuser.local_part, '/') AS maildir
+            FROM dashboard_mailuser
+            JOIN dashboard_domain
+              ON dashboard_mailuser.domain_id = dashboard_domain.id
+            WHERE dashboard_mailuser.active = 1
+              AND CONCAT(dashboard_mailuser.local_part, '@', dashboard_domain.domain_name) = '%s'
+  mysql-virtual-alias-maps.cf:
+    user = kubepanel
+    password = <MARIADB_ROOT_PASSWORD>
+    hosts = mariadb.kubepanel.svc.cluster.local
+    dbname = kubepanel
+    query = SELECT dashboard_mailalias.destination
+            FROM dashboard_mailalias
+            WHERE dashboard_mailalias.active = 1
+              AND dashboard_mailalias.source = '%s'
+  mysql-virtual-mailbox-domains.cf:
+    user = kubepanel
+    password = <MARIADB_ROOT_PASSWORD>
+    hosts = mariadb.kubepanel.svc.cluster.local
+    dbname = kubepanel
+    query = SELECT dashboard_domain.domain_name
+            FROM dashboard_domain
+            WHERE dashboard_domain.domain_name='%s'
+  dovecot-sql.conf.ext:
+    driver = mysql
+    connect = host=mariadb.kubepanel.svc.cluster.local dbname=kubepanel user=kubepanel password=<MARIADB_ROOT_PASSWORD>
+    default_pass_scheme = SHA512-CRYPT
+    password_query = SELECT \
+        CONCAT(dashboard_mailuser.local_part, '@', dashboard_domain.domain_name) AS user, \
+        dashboard_mailuser.password AS password, \
+        '/var/mail/vmail/' AS userdb_home, \
+        'vmail' AS userdb_uid, \
+        'vmail' AS userdb_gid, \
+        CONCAT('maildir:/var/mail/vmail/', dashboard_domain.domain_name, '/', dashboard_mailuser.local_part, '/') AS userdb_mail \
+    FROM dashboard_mailuser \
+    JOIN dashboard_domain ON dashboard_mailuser.domain_id = dashboard_domain.id \
+    WHERE dashboard_mailuser.active = 1 \
+      AND CONCAT(dashboard_mailuser.local_part, '@', dashboard_domain.domain_name) = '%u'
+  10-mail.conf:
+    mail_location = maildir:/var/mail/vmail/%d/%n
+    passdb {
+      driver = sql
+      args = /etc/dovecot/dovecot-sql.conf.ext
+    }
+    userdb {
+      driver = static
+      args = uid=vmail gid=vmail home=/var/mail/vmail/%d/%n
+    }
+    namespace inbox {
+      inbox = yes
+    }
+    mail_privileged_group = mail
+    protocol !indexer-worker {
+    }
 ---
 apiVersion: v1
 data:

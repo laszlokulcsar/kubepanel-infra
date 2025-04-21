@@ -1,6 +1,5 @@
 FROM ubuntu:latest
-RUN apt update; DEBIAN_FRONTEND=noninteractive apt install -yq postfix
-COPY postfix.conf /etc/postfix/main.cf
+RUN apt update; DEBIAN_FRONTEND=noninteractive apt install -yq postfix postfix-mysql dovecot-imapd dovecot-lmtpd dovecot-mysql dovecot-pop3d
 COPY smtp_entrypoint.sh /entrypoint.sh
 EXPOSE 25
 ENTRYPOINT /entrypoint.sh
