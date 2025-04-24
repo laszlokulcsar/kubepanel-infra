@@ -92,6 +92,7 @@ main() {
     kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.8.0"
     kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
     kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
+    kubectl wait pod --for=condition=Ready -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
     YAML_FILE="kubepanel-install.yaml"
     prompt_user_input "Enter Superuser email address" DJANGO_SUPERUSER_EMAIL
     prompt_user_input "Enter Superuser username" DJANGO_SUPERUSER_USERNAME
@@ -102,7 +103,6 @@ main() {
     kubectl apply -f $YAML_FILE
     check_deployment_status
     echo "Software Defined Storage component has been installed, waiting to be ready... It can take up to 10-15 minutes..."
-    kubectl wait pod --for=condition=Ready -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
     kubectl delete daemonset node-ip-updater -n kubepanel
 }
 main
