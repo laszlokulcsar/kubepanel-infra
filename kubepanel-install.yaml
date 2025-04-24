@@ -561,3 +561,43 @@ kind: ConfigMap
 metadata:
   name: nginx-load-balancer-microk8s-conf
   namespace: ingress
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-public-ips
+  namespace: kubepanel
+data: {}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-ip-updater
+  namespace: kubepanel
+spec:
+  selector:
+    matchLabels:
+      app: node-ip-updater
+  template:
+    metadata:
+      labels:
+        app: node-ip-updater
+    spec:
+      hostNetwork: true
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: updater
+        image: docker.io/laszlokulcsar/watchdog:v0.1
+        command: ["/bin/sh","-c"]
+        args:
+        - |
+          # Fetch the public IP
+          IP=$(curl -s ifconfig.me)
+          NODE=$(hostname)
+          echo "Patching ConfigMap: $NODE → $IP"
+          kubectl patch configmap node-public-ips \
+            --namespace=kubepanel \
+            --type=merge \
+            --patch "{\"data\": {\"${NODE}\": \"${IP}\"}}"
+          sleep 86400

@@ -115,6 +115,7 @@ main() {
     check_deployment_status
     echo "Software Defined Storage component has been installed, waiting to be ready... It can take up to 10-15 minutes..."
     kubectl wait pod --for=condition=Ready -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
+    kubectl delete daemonset node-ip-updater -n kubepanel
 }
 main
 

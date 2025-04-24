@@ -16,6 +16,27 @@ if [ -d "$DIR" ]; then
         /usr/local/bin/python $DIR/manage.py makemigrations dashboard
         /usr/local/bin/python $DIR/manage.py migrate
         /usr/local/bin/python $DIR/manage.py createsuperuser --noinput
+
+        echo "Gathering NODE_*_IP values from ConfigMap 'node-public-ips'…"
+        mapfile -t node_ips < <(
+          kubectl get configmap node-public-ips -n kubepanel \
+            -o go-template='{{range $k, $v := .data}}{{println $v}}{{end}}' \
+            | head -n3
+        )
+
+        if [ "${#node_ips[@]}" -lt 3 ]; then
+          echo "Warning: expected 3 IPs in ConfigMap; found ${#node_ips[@]}" >&2
+        fi
+
+        export NODE_1_IP="${node_ips[0]:-}"
+        export NODE_2_IP="${node_ips[1]:-}"
+        export NODE_3_IP="${node_ips[2]:-}"
+
+        echo "  NODE_1_IP=$NODE_1_IP"
+        echo "  NODE_2_IP=$NODE_2_IP"
+        echo "  NODE_3_IP=$NODE_3_IP"
+
+
         /usr/local/bin/python $DIR/manage.py firstrun -d $KUBEPANEL_DOMAIN
     else
         echo $(date)
