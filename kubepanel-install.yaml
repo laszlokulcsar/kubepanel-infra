@@ -126,12 +126,6 @@ spec:
           value: "kubepanel"
         - name: MARIADB_ROOT_PASSWORD
           value: "<MARIADB_ROOT_PASSWORD>"
-        - name: NODE_1_IP
-          value: "<NODE_1_IP>"
-        - name: NODE_2_IP
-          value: "NODE_2_IP"
-        - name: NODE_3_IP
-          value: "NODE_3_IP"
         imagePullPolicy: Always
         volumeMounts:
         - name: kubepanel
@@ -368,10 +362,6 @@ spec:
     app: smtp
   sessionAffinity: None
   type: ClusterIP
-  externalIPs:
-  - <NODE_1_IP>
-  - <NODE_2_IP>
-  - <NODE_3_IP>
 status:
   loadBalancer: {}
 ---

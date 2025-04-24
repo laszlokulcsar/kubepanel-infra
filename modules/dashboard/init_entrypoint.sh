@@ -11,7 +11,7 @@ if [ -d "$DIR" ]; then
         rmdir "$DIR/lost+found"
         git clone https://github.com/laszlokulcsar/kubepanel.git "$DIR" && mkdir $DIR/yaml_templates
         #DJANGO_SUPERUSER_EMAIL DJANGO_SUPERUSER_USERNAME DJANGO_SUPERUSER_PASSWORD KUBEPANEL_DOMAIN env variables should be set for the following command
-        sed -i "s/<KUBEPANEL_DOMAIN>/$KUBEPANEL_DOMAIN/g" $DIR/kubepanel/settings.py
+        sed -i "s;<KUBEPANEL_DOMAIN>;$KUBEPANEL_DOMAIN;g" $DIR/kubepanel/settings.py
         sed -i "s;<MARIADB_ROOT_PASSWORD>;$MARIADB_ROOT_PASSWORD;g" $DIR/kubepanel/settings.py
         /usr/local/bin/python $DIR/manage.py makemigrations dashboard
         /usr/local/bin/python $DIR/manage.py migrate
@@ -36,6 +36,7 @@ if [ -d "$DIR" ]; then
         echo "  NODE_2_IP=$NODE_2_IP"
         echo "  NODE_3_IP=$NODE_3_IP"
 
+        kubectl patch service smtp -n kubepanel --type=merge -p "{\"spec\": {\"externalTrafficPolicy\": \"Local\", \"externalIPs\": [\"$NODE_1_IP\",\"$NODE_2_IP\",\"$NODE_3_IP\"]}}"
 
         /usr/local/bin/python $DIR/manage.py firstrun -d $KUBEPANEL_DOMAIN
     else
