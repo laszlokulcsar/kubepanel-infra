@@ -78,7 +78,7 @@ wait_for_ha_status() {
 main() {
     sudo systemctl stop multipathd && sudo systemctl disable multipathd
     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /bin
-    sudo apt update && sudo snap install microk8s --classic --channel=1.31
+    sudo apt update && apt install git -y && sudo snap install microk8s --classic --channel=1.31
     echo "MicroK8S has been installed, waiting to be ready..."
     sudo microk8s status --wait-ready
     sudo microk8s enable ingress
