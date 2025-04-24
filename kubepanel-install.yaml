@@ -348,7 +348,6 @@ metadata:
   name: smtp
   namespace: kubepanel
 spec:
-  externalTrafficPolicy: Local
   internalTrafficPolicy: Cluster
   ipFamilies:
   - IPv4
