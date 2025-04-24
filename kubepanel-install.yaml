@@ -343,6 +343,10 @@ spec:
         - name: smtp-conf
           mountPath: /etc/dovecot/conf.d/10-mail.conf
           subPath: 10-mail.conf
+     volumes:
+     - configMap:
+         name: smtp-conf
+       name: smtp-conf
 ---
 apiVersion: v1
 kind: Service
@@ -556,7 +560,7 @@ data:
     SecAuditEngine RelevantOnly
     SecAuditLogParts ABCEFHZ
     SecAuditLogType Serial
-    Include /etc/nginx/modsec/custom-rules.conf
+#    Include /etc/nginx/modsec/custom-rules.conf
 kind: ConfigMap
 metadata:
   name: nginx-load-balancer-microk8s-conf
