@@ -47,7 +47,7 @@ check_deployment_status() {
             echo "$(date): Deployment $DEPLOYMENT is ready."
             break
         else
-            echo "$(date): Deployment $DEPLOYMENT is not ready yet, it can take 5 to 10 minutes to complete."
+            echo "$(date): Deployment $DEPLOYMENT is not ready yet, it can take 15 to 20 minutes to complete."
         fi
         sleep 15
     done
@@ -92,7 +92,6 @@ main() {
     kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.8.0"
     kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
     kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
-    kubectl wait pod --for=condition=Ready --timeout=180s -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
     YAML_FILE="kubepanel-install.yaml"
     prompt_user_input "Enter Superuser email address" DJANGO_SUPERUSER_EMAIL
     prompt_user_input "Enter Superuser username" DJANGO_SUPERUSER_USERNAME
@@ -100,6 +99,7 @@ main() {
     prompt_user_input "Enter Kubepanel domain name" KUBEPANEL_DOMAIN
     download_yaml "$GITHUB_URL" "$YAML_FILE"
     replace_placeholders "$YAML_FILE" "$DJANGO_SUPERUSER_EMAIL" "$DJANGO_SUPERUSER_USERNAME" "$DJANGO_SUPERUSER_PASSWORD" "$KUBEPANEL_DOMAIN"
+    kubectl wait pod --for=condition=Ready --timeout=180s -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
     kubectl apply -f $YAML_FILE
     check_deployment_status
     echo "Software Defined Storage component has been installed, waiting to be ready... It can take up to 10-15 minutes..."

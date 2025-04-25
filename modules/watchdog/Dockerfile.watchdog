@@ -1,6 +1,4 @@
-FROM python:latest
-RUN cd /bin; curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"; chmod +x /bin/kubectl
-RUN pip install mysqlclient Django cryptography requests geoip2 cloudflare
+FROM laszlokulcsar/kubepanelbase:v0.1
 USER root
 COPY watchdog_entrypoint.sh /entrypoint.sh
 ENTRYPOINT /entrypoint.sh

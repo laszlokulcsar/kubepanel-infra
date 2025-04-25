@@ -1,9 +1,8 @@
 # Use Ubuntu as the base image
-FROM python:latest
+FROM laszlokulcsar/kubepanelbase:v0.1
 
 RUN mkdir -p /kubepanel
 RUN mkdir -p /dkim-privkeys
-RUN pip install passlib mysqlclient Django cryptography requests geoip2 cloudflare
 RUN mkdir -p /root/.ssh/
 RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
 # Adjust permissions to allow Nginx and PHP-FPM to access the document root

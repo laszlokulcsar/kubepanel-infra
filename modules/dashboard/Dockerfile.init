@@ -1,7 +1,6 @@
 # Use Ubuntu as the base image
-FROM python:latest
+FROM laszlokulcsar/kubepanelbase:v0.1
 RUN apt update -y; apt install mariadb-client -y
-RUN pip install mysqlclient Django cryptography requests geoip2 cloudflare
 RUN mkdir -p /kubepanel/
 RUN mkdir -p /root/.ssh/
 RUN ssh-keyscan github.com >> /root/.ssh/known_hosts;
