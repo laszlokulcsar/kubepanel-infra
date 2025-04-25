@@ -36,8 +36,6 @@ if [ -d "$DIR" ]; then
         echo "  NODE_2_IP=$NODE_2_IP"
         echo "  NODE_3_IP=$NODE_3_IP"
 
-        kubectl patch service smtp -n kubepanel --type=merge -p "{\"spec\": {\"externalTrafficPolicy\": \"Local\", \"externalIPs\": [\"$NODE_1_IP\",\"$NODE_2_IP\",\"$NODE_3_IP\"]}}"
-
         /usr/local/bin/python $DIR/manage.py firstrun -d $KUBEPANEL_DOMAIN
     else
         echo $(date)
