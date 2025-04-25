@@ -31,11 +31,7 @@ replace_placeholders() {
     local domain=$5
     local mariadbpass=$(openssl rand -base64 15)
 
-    mapfile -t node_ips < <(kubectl get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="ExternalIP")].address}{"\n"}{end}' | head -n 3)
-    # Fallback to InternalIP if ExternalIP not present
-    if [ "${#node_ips[@]}" -lt 3 ]; then
-        mapfile -t node_ips < <(kubectl get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 3)
-    fi
+    mapfile -t node_ips < <(kubectl get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 3)
     local node1_ip=${node_ips[0]}
     local node2_ip=${node_ips[1]}
     local node3_ip=${node_ips[2]}
