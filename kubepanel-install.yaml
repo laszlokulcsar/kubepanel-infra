@@ -319,6 +319,8 @@ spec:
         - name: MARIADB_ROOT_PASSWORD
           value: "<MARIADB_ROOT_PASSWORD>"
         volumeMounts:
+        - mountPath: /var/spool/postfix
+          name: postfix-queue
         - mountPath: /var/mail/vmail
           name: smtp-data
         - name: smtp-conf
