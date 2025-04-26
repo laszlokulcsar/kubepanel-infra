@@ -319,6 +319,8 @@ spec:
         - name: MARIADB_ROOT_PASSWORD
           value: "<MARIADB_ROOT_PASSWORD>"
         volumeMounts:
+        - mountPath: /var/mail/vmail
+          name: smtp-data
         - name: smtp-conf
           mountPath: /etc/postfix/main.cf
           subPath: main.cf
@@ -338,6 +340,9 @@ spec:
           mountPath: /etc/dovecot/conf.d/10-mail.conf
           subPath: 10-mail.conf
      volumes:
+     - name: smtp-data
+       persistentVolumeClaim:
+         claimName: smtp-pvc
      - configMap:
          name: smtp-conf
        name: smtp-conf
@@ -409,6 +414,16 @@ spec:
   accessModes: [ReadWriteOnce]
   storageClassName: linstor-sc
   resources: { requests: { storage: 5Gi } }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smtp-pvc
+  namespace: kubepanel
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: linstor-sc
+  resources: { requests: { storage: 500Gi } }
 ---
 apiVersion: v1
 kind: Service

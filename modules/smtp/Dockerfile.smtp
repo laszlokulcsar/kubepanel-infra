@@ -1,5 +1,7 @@
 FROM ubuntu:latest
 RUN apt update; DEBIAN_FRONTEND=noninteractive apt install -yq postfix postfix-mysql dovecot-imapd dovecot-lmtpd dovecot-mysql dovecot-pop3d
+RUN adduser --disabled-password --gecos "" vmail; mkdir /var/mail/vmail
 COPY smtp_entrypoint.sh /entrypoint.sh
+COPY 11-master.conf /etc/dovecot/conf.d/11-master.conf
 EXPOSE 25
 ENTRYPOINT /entrypoint.sh
