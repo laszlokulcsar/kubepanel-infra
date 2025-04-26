@@ -343,6 +343,9 @@ spec:
      - name: smtp-data
        persistentVolumeClaim:
          claimName: smtp-pvc
+     - name: postfix-queue
+       persistentVolumeClaim:
+         claimName: postfix-queue-pvc
      - configMap:
          name: smtp-conf
        name: smtp-conf
@@ -424,6 +427,16 @@ spec:
   accessModes: [ReadWriteOnce]
   storageClassName: linstor-sc
   resources: { requests: { storage: 500Gi } }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postfix-queue-pvc
+  namespace: kubepanel
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: linstor-sc
+  resources: { requests: { storage: 1Gi } }
 ---
 apiVersion: v1
 kind: Service
