@@ -30,6 +30,7 @@ replace_placeholders() {
     local password=$4
     local domain=$5
     local mariadbpass=$(openssl rand -base64 15)
+    local mariadbpass_rc=$(openssl rand -base64 15)
 
     mapfile -t node_ips < <(kubectl get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 3)
     local node1_ip=${node_ips[0]}
@@ -41,6 +42,7 @@ replace_placeholders() {
     sed -i "s,<DJANGO_SUPERUSER_PASSWORD>,$password,g" "$file"
     sed -i "s,<KUBEPANEL_DOMAIN>,$domain,g" "$file"
     sed -i "s,<MARIADB_ROOT_PASSWORD>,$mariadbpass,g" "$file"
+    sed -i "s,<MARIADB_ROOT_PASSWORD_RC>,$mariadbpass_rc,g" "$file"
     sed -i "s,<NODE_1_IP>,$node1_ip,g" "$file"
     sed -i "s,<NODE_2_IP>,$node2_ip,g" "$file"
     sed -i "s,<NODE_3_IP>,$node3_ip,g" "$file"

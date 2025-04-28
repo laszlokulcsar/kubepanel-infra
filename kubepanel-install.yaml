@@ -126,6 +126,10 @@ spec:
           value: "kubepanel"
         - name: MARIADB_ROOT_PASSWORD
           value: "<MARIADB_ROOT_PASSWORD>"
+        - name: DBNAME_RC
+          value: "roundcube"
+        - name: MARIADB_ROOT_PASSWORD_RC
+          value: "<MARIADB_ROOT_PASSWORD_RC>"
         imagePullPolicy: Always
         volumeMounts:
         - name: kubepanel
@@ -319,6 +323,9 @@ spec:
         - name: MARIADB_ROOT_PASSWORD
           value: "<MARIADB_ROOT_PASSWORD>"
         volumeMounts:
+        - name: mail-tls
+          mountPath: /etc/ssl/kubepanel
+          readOnly: true
         - mountPath: /var/spool/postfix
           name: postfix-queue
         - mountPath: /var/mail/vmail
@@ -351,6 +358,9 @@ spec:
      - configMap:
          name: smtp-conf
        name: smtp-conf
+     - name: mail-tls
+       secret:
+         secretName: kubepanel-cert
 ---
 apiVersion: v1
 kind: Service
@@ -378,6 +388,40 @@ spec:
   - <NODE_3_IP>
 status:
   loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imap-ingress
+  namespace: ingress
+  labels:
+    name: nginx-ingress-microk8s
+spec:
+  type: ClusterIP
+  ports:
+    - name: proxied-tcp-993
+      port: 993
+      targetPort: 993
+      protocol: TCP
+    - name: proxied-tcp-587
+      port: 587
+      targetPort: 587
+      protocol: TCP
+  selector:
+    name: nginx-ingress-microk8s
+  externalIPs:
+  - <NODE_1_IP>
+  - <NODE_2_IP>
+  - <NODE_3_IP>
+---
+apiVersion: v1
+data:
+  "587": kubepanel/smtp:587
+  "993": kubepanel/smtp:993
+kind: ConfigMap
+metadata:
+  name: nginx-ingress-tcp-microk8s-conf
+  namespace: ingress
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -476,9 +520,10 @@ data:
     append_dot_mydomain = no
     readme_directory = no
     compatibility_level = 3.6
-    smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
-    smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+    smtpd_tls_cert_file=/etc/ssl/kubepanel/tls.crt
+    smtpd_tls_key_file=/etc/ssl/kubepanel/tls.key
     smtpd_tls_security_level=may
+    smtpd_tls_auth_only = yes
     smtp_tls_CApath=/etc/ssl/certs
     smtp_tls_security_level=may
     smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
@@ -503,6 +548,11 @@ data:
     virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
     virtual_alias_maps = mysql:/etc/postfix/mysql-virtual-alias-maps.cf
     virtual_transport = lmtp:unix:private/dovecot-lmtp
+    smtpd_sasl_type = dovecot
+    smtpd_sasl_path = private/auth
+    smtpd_sasl_auth_enable = yes
+    smtpd_sasl_security_options = noanonymous
+    smtpd_sasl_local_domain = $myhostname
   mysql-virtual-mailbox-maps.cf: |-
     user = kubepanel
     password = <MARIADB_ROOT_PASSWORD>
@@ -629,3 +679,114 @@ spec:
             --type=merge \
             --patch "{\"data\": {\"${NODE}\": \"${IP}\"}}"
           sleep 86400
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roundcube-pvc
+  namespace: kubepanel
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: linstor-sc
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roundcube
+  namespace: kubepanel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roundcube
+  template:
+    metadata:
+      labels:
+        app: roundcube
+    spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: roundcube-pvc
+      containers:
+        - name: roundcube
+          image: roundcube/roundcubemail:1.6.6-apache        # upstream image
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ROUNDCUBEMAIL_DEFAULT_HOST      # IMAP host = dovecot lmtp sibling
+              value: "ssl://<KUBEPANEL_DOMAIN>"    # IMAPS = 993
+            - name: ROUNDCUBEMAIL_SMTP_SERVER       # SMTP submission port 587
+              value: "tls://<KUBEPANEL_DOMAIN>"
+            - name: ROUNDCUBEMAIL_DEFAULT_PORT
+              value: "993"
+            - name: ROUNDCUBE_DB_TYPE
+              value: "mysql"
+            - name: ROUNDCUBE_DB_HOST
+              valueFrom: { secretKeyRef: { name: roundcube-db-secret, key: DB_HOST } }
+            - name: ROUNDCUBE_DB_PORT
+              valueFrom: { secretKeyRef: { name: roundcube-db-secret, key: DB_PORT } }
+            - name: ROUNDCUBE_DB_USER
+              valueFrom: { secretKeyRef: { name: roundcube-db-secret, key: DB_USER } }
+            - name: ROUNDCUBE_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: roundcube-db-secret, key: DB_PASSWORD } }
+            - name: ROUNDCUBE_DB_NAME
+              valueFrom: { secretKeyRef: { name: roundcube-db-secret, key: DB_NAME } }
+          ports:
+            - containerPort: 80        # PHP-FPM
+          volumeMounts:
+            - name: data
+              mountPath: /var/roundcube          # temp, logs, plugins, etc.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roundcube
+  namespace: kubepanel
+spec:
+  type: ClusterIP
+  selector:
+    app: roundcube
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: roundcube-db-secret
+  namespace: kubepanel
+type: Opaque
+stringData:
+  DB_USER:     roundcube                      # create this user in MariaDB
+  DB_PASSWORD: <MARIADB_ROOT_PASSWORD_RC>
+  DB_NAME:     roundcube                      # create this DB in MariaDB
+  DB_HOST:     mariadb.kubepanel.svc.cluster.local
+  DB_PORT:     "3306"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: roundcube
+  namespace: kubepanel
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: public
+  tls:
+    - hosts: [ "webmail.<KUBEPANEL_DOMAIN>" ]
+      secretName: roundcube-cert
+  rules:
+    - host: "webmail.<KUBEPANEL_DOMAIN>"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: roundcube
+                port:
+                  number: 80
