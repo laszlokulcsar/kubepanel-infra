@@ -378,6 +378,15 @@ spec:
     port: 25
     protocol: TCP
     targetPort: 25
+  - name: imap
+    port: 993
+    protocol: TCP
+    targetPort: 993
+  - name: submission
+    port: 587
+    protocol: TCP
+    targetPort: 587
+
   selector:
     app: smtp
   sessionAffinity: None
@@ -627,14 +636,6 @@ data:
     "request_query": "$args", "request_length": $request_length, "duration": $request_time,"method":
     "$request_method", "http_referrer": "$http_referer", "http_user_agent": "$http_user_agent",
     "request_body": "$request_body" }'
-  modsecurity-snippet: |
-    SecRuleEngine On
-    SecAuditLog /var/log/nginx/modsec_audit/
-    SecAuditLogFormat JSON
-    SecAuditEngine RelevantOnly
-    SecAuditLogParts ABCEFHZ
-    SecAuditLogType Serial
-#    Include /etc/nginx/modsec/custom-rules.conf
 kind: ConfigMap
 metadata:
   name: nginx-load-balancer-microk8s-conf
