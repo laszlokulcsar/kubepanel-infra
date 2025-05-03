@@ -23,4 +23,5 @@ if [ "${WP_PREINSTALL:-}" = "True" ]; then
     fi
 else
     echo "WP_PREINSTALL is not True. Skipping pre-installation."
+    chown -R 1000:1000 /usr/share/nginx/html
 fi
