@@ -791,3 +791,11 @@ spec:
                 name: roundcube
                 port:
                   number: 80
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: piraeus-snapshots
+driver: linstor.csi.linbit.com
+deletionPolicy: Delete
+
