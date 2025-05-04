@@ -88,7 +88,7 @@ wait_for_ha_status() {
 main() {
     sudo systemctl stop multipathd && sudo systemctl disable multipathd
     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /bin
-    sudo apt update && apt install git -y && sudo snap install microk8s --classic --channel=1.31
+    sudo apt update && apt install git lvm2 -y && sudo snap install microk8s --classic --channel=1.31
     echo "MicroK8S has been installed, waiting to be ready..."
     sudo microk8s status --wait-ready
     sudo microk8s enable ingress
@@ -99,7 +99,7 @@ main() {
     wait_for_ha_status
     vgcreate linstorvg /dev/sdb
     lvcreate -l100%FREE -T linstorvg/linstorlv
-    kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.7.0"
+    kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.8.1"
     kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
     kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
     YAML_FILE="kubepanel-install.yaml"
