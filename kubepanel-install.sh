@@ -99,7 +99,7 @@ main() {
     wait_for_ha_status
     vgcreate linstorvg /dev/sdb
     lvcreate -l100%FREE -T linstorvg/linstorlv
-    kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.7.0"
+    kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.8.1"
     kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
     kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
     YAML_FILE="kubepanel-install.yaml"
