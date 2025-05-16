@@ -37,10 +37,15 @@ replace_placeholders() {
     local mariadbpass=$(openssl rand -base64 15)
     local mariadbpass_rc=$(openssl rand -base64 15)
 
-    mapfile -t node_ips < <(kubectl get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 3)
-    local node1_ip=${node_ips[0]}
-    local node2_ip=${node_ips[1]}
-    local node3_ip=${node_ips[2]}
+    echo "Waiting for 3 nodes to report InternalIP…"
+    while true; do
+      sleep 5
+      mapfile -t node_ips < <(kubectl get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 3)
+      if [[ -n "${node_ips[0]}" && -n "${node_ips[1]}" && -n "${node_ips[2]}" ]]; then
+        break
+      fi
+      echo "  still waiting…"
+    done
 
     sed -i "s,<DJANGO_SUPERUSER_EMAIL>,$email,g" "$file"
     sed -i "s,<DJANGO_SUPERUSER_USERNAME>,$username,g" "$file"
