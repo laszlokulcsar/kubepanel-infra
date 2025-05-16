@@ -71,9 +71,9 @@ check_deployment_status() {
 generate_join_command() {
     echo "Generating join command..."
     # Generate a token with a longer TTL (e.g., 1 hour) so multiple nodes can join using the same token
-    JOIN_COMMAND=$(microk8s add-node --token-ttl 3600)
-    printf "${YELLOW}==> %s: ${NC}" "Please run the following command(s) on the other nodes to join them to the cluster:"
-    printf "${YELLOW}==> %s: ${NC}" "$JOIN_COMMAND"
+    JOIN_COMMAND=$(microk8s add-node --token-ttl 3600 | head -n 2)
+    printf "${GREEN}==> %s: ${NC}" "$JOIN_COMMAND"
+    echo ""
 }
 
 wait_for_ha_status() {
@@ -121,4 +121,3 @@ main() {
     kubectl delete daemonset node-ip-updater -n kubepanel
 }
 main
-
