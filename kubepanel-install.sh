@@ -72,7 +72,7 @@ generate_join_command() {
     echo "Generating join command..."
     # Generate a token with a longer TTL (e.g., 1 hour) so multiple nodes can join using the same token
     JOIN_COMMAND=$(microk8s add-node --token-ttl 3600 | head -n 2)
-    printf "${GREEN}==> %s: ${NC}" "$JOIN_COMMAND"
+    printf "${GREEN}==> %s ${NC}" "$JOIN_COMMAND"
     echo ""
 }
 
