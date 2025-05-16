@@ -46,6 +46,9 @@ replace_placeholders() {
       fi
       echo "  still waiting…"
     done
+    local node1_ip=${node_ips[0]}
+    local node2_ip=${node_ips[1]}
+    local node3_ip=${node_ips[2]}
 
     sed -i "s,<DJANGO_SUPERUSER_EMAIL>,$email,g" "$file"
     sed -i "s,<DJANGO_SUPERUSER_USERNAME>,$username,g" "$file"
