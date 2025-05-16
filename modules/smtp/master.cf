@@ -1,4 +1,9 @@
-smtp      inet  n       -       y       -       -       smtpd
+smtp      inet  n       -       n       -       1       postscreen
+    -o smtpd_sasl_auth_enable=no
+dnsblog   unix  -       -       n       -       0       dnsblog
+postscreen  unix  n       -       y       -       1 postscreen
+  -o postscreen_greet_action=enforce
+smtpd     pass    -       -       y       -       -       smtpd
 submission inet n       -       n       -       -       smtpd
   -o syslog_name=postfix/submission
   -o smtpd_tls_security_level=encrypt

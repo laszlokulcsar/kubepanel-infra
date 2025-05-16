@@ -56,6 +56,7 @@ allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
 parameters:
   linstor.csi.linbit.com/storagePool: pool1
+  csi.storage.k8s.io/fstype: xfs
   linstor.csi.linbit.com/placementCount: "2"
 ---
 apiVersion: v1
