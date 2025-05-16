@@ -255,7 +255,7 @@ spec:
   storageClassName: linstor-sc  # This must match the PV's storageClassName
   resources:
     requests:
-      storage: 10Mi
+      storage: 64Mi
 ---
 apiVersion: v1
 kind: Service
