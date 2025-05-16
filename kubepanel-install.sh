@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# ──────────────── Colours ────────────────
+YELLOW='\033[1;33m'
+GREEN='\033[1;32m'
+NC='\033[0m' # No Colour
+
 if [ "$1" == "dev" ]; then
     GITHUB_URL="https://raw.githubusercontent.com/laszlokulcsar/kubepanel-infra/refs/heads/v0.2/kubepanel-install.yaml"
 else
@@ -9,7 +14,7 @@ fi
 prompt_user_input() {
     local prompt_message=$1
     local var_name=$2
-    read -p "$prompt_message: " $var_name
+    read -rp "$(printf "${YELLOW}==> %s: ${NC}" "$prompt_message")" $var_name
 }
 
 download_yaml() {
@@ -67,8 +72,8 @@ generate_join_command() {
     echo "Generating join command..."
     # Generate a token with a longer TTL (e.g., 1 hour) so multiple nodes can join using the same token
     JOIN_COMMAND=$(microk8s add-node --token-ttl 3600)
-    echo "Please run the following command(s) on the other nodes to join them to the cluster:"
-    echo "$JOIN_COMMAND"
+    printf "${YELLOW}==> %s: ${NC}" "Please run the following command(s) on the other nodes to join them to the cluster:"
+    printf "${YELLOW}==> %s: ${NC}" "$JOIN_COMMAND"
 }
 
 wait_for_ha_status() {
