@@ -11,4 +11,5 @@ vgcreate linstorvg /dev/sdb
 lvcreate -l100%FREE -T linstorvg/linstorlv
 echo "MicroK8S has been installed, waiting to be ready..."
 sudo microk8s status --wait-ready
-printf "${GREEN}==> %s: ${NC}" "Please run the cluster join command:"
+printf "${GREEN}==> %s ${NC}" "Please run the cluster join command:"
+echo ""
