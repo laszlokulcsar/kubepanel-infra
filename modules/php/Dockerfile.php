@@ -1,6 +1,9 @@
 FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
+    imagemagick \
+    php-redis \
+    php-imagick \
     php-fpm \
     php-mysql \
     php-curl \
@@ -16,8 +19,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN groupadd -g 1000 webgroup && \
     useradd -u 1000 -g webgroup -m webuser
-
-RUN ln -sf /dev/stdout /var/log/php7.4-fpm.log
+RUN ln -sf /proc/1/fd/1 /var/log/php7.4-fpm.log
 COPY www.conf /etc/php/7.4/fpm/pool.d/www.conf
 COPY php-fpm.conf /etc/php/7.4/fpm/php-fpm.conf
 COPY php.ini /etc/php/7.4/fpm/php.ini

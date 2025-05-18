@@ -2,8 +2,10 @@
 set -euo pipefail
 SMTP=$(dig +short smtp.kubepanel.svc.cluster.local)
 MARIADB=$(dig +short mariadb.kubepanel.svc.cluster.local)
+REDIS=$(dig +short redis.kubepanel.svc.cluster.local)
 iptables -t nat -I OUTPUT -m tcp -p tcp --dport 25 -j DNAT --to-destination $SMTP:25
 iptables -t nat -I OUTPUT -m tcp -p tcp --dport 3306 -j DNAT --to-destination $MARIADB:3306
+iptables -t nat -I OUTPUT -m tcp -p tcp --dport 6379 -j DNAT --to-destination $REDIS:6379
 iptables -t nat -A POSTROUTING -j MASQUERADE
 
 # Check if WP_PREINSTALL is set to "True"
