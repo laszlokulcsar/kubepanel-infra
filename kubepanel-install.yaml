@@ -15,6 +15,20 @@ metadata:
   name: linstorcluster
 spec:
   patches:
+    - patch: |
+        apiVersion: apps/v1
+        kind: DaemonSet
+        metadata:
+          name: linstor-satellite
+        spec:
+          template:
+            spec:
+              initContainers:
+                - name: drbd-module-loader
+                  image: docker.io/laszlokulcsar/drbd9-noble:v9.2.13fix
+      target:
+        kind: DaemonSet
+        name: linstor-satellite
     - target:
         name: linstor-csi-node
         kind: DaemonSet
