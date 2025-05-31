@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a new user and group (non-root)
-RUN groupadd -g 1000 webgroup && \
-    useradd -u 1000 -g webgroup -m webuser
+RUN groupadd -g 7777 webgroup && \
+    useradd -u 7777 -g webgroup -m webuser
 
 # Change ownership of the nginx and php directories to the new user
 RUN chown -R webuser:webgroup /var/www/html /var/log/nginx /var/lib/nginx /var/run /run 

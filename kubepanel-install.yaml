@@ -319,54 +319,64 @@ spec:
       labels:
         app: smtp
     spec:
-     containers:
-      - name: smtp
-        image: docker.io/laszlokulcsar/smtp:v0.1
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 25
-        env:
-        - name: MARIADB_ROOT_PASSWORD
-          value: "<MARIADB_ROOT_PASSWORD>"
-        volumeMounts:
-        - name: mail-tls
-          mountPath: /etc/ssl/kubepanel
-          readOnly: true
-        - mountPath: /var/spool/postfix
-          name: postfix-queue
-        - mountPath: /var/mail/vmail
-          name: smtp-data
-        - name: smtp-conf
-          mountPath: /etc/postfix/main.cf
-          subPath: main.cf
-        - name: smtp-conf
-          mountPath: /etc/postfix/mysql-virtual-alias-maps.cf
-          subPath: mysql-virtual-alias-maps.cf
-        - name: smtp-conf
-          mountPath: /etc/postfix/mysql-virtual-mailbox-domains.cf
-          subPath: mysql-virtual-mailbox-domains.cf
-        - name: smtp-conf
-          mountPath: /etc/postfix/mysql-virtual-mailbox-maps.cf
-          subPath: mysql-virtual-mailbox-maps.cf
-        - name: smtp-conf
-          mountPath: /etc/dovecot/dovecot-sql.conf.ext
-          subPath: dovecot-sql.conf.ext
-        - name: smtp-conf
-          mountPath: /etc/dovecot/conf.d/10-mail.conf
-          subPath: 10-mail.conf
-     volumes:
-     - name: smtp-data
-       persistentVolumeClaim:
-         claimName: smtp-pvc
-     - name: postfix-queue
-       persistentVolumeClaim:
-         claimName: postfix-queue-pvc
-     - configMap:
-         name: smtp-conf
-       name: smtp-conf
-     - name: mail-tls
-       secret:
-         secretName: kubepanel-cert
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: mx0
+                operator: In
+                values:
+                - "true"
+            weight: 1
+      containers:
+       - name: smtp
+         image: docker.io/laszlokulcsar/smtp:v0.1
+         imagePullPolicy: Always
+         ports:
+         - containerPort: 25
+         env:
+         - name: MARIADB_ROOT_PASSWORD
+           value: "<MARIADB_ROOT_PASSWORD>"
+         volumeMounts:
+         - name: mail-tls
+           mountPath: /etc/ssl/kubepanel
+           readOnly: true
+         - mountPath: /var/spool/postfix
+           name: postfix-queue
+         - mountPath: /var/mail/vmail
+           name: smtp-data
+         - name: smtp-conf
+           mountPath: /etc/postfix/main.cf
+           subPath: main.cf
+         - name: smtp-conf
+           mountPath: /etc/postfix/mysql-virtual-alias-maps.cf
+           subPath: mysql-virtual-alias-maps.cf
+         - name: smtp-conf
+           mountPath: /etc/postfix/mysql-virtual-mailbox-domains.cf
+           subPath: mysql-virtual-mailbox-domains.cf
+         - name: smtp-conf
+           mountPath: /etc/postfix/mysql-virtual-mailbox-maps.cf
+           subPath: mysql-virtual-mailbox-maps.cf
+         - name: smtp-conf
+           mountPath: /etc/dovecot/dovecot-sql.conf.ext
+           subPath: dovecot-sql.conf.ext
+         - name: smtp-conf
+           mountPath: /etc/dovecot/conf.d/10-mail.conf
+           subPath: 10-mail.conf
+      volumes:
+      - name: smtp-data
+        persistentVolumeClaim:
+          claimName: smtp-pvc
+      - name: postfix-queue
+        persistentVolumeClaim:
+          claimName: postfix-queue-pvc
+      - configMap:
+          name: smtp-conf
+        name: smtp-conf
+      - name: mail-tls
+        secret:
+          secretName: kubepanel-cert
 ---
 apiVersion: v1
 kind: Service
@@ -392,7 +402,14 @@ spec:
     port: 587
     protocol: TCP
     targetPort: 587
-
+  - name: pop3
+    port: 995
+    protocol: TCP
+    targetPort: 995
+  - name: submissions
+    port: 465
+    protocol: TCP
+    targetPort: 465
   selector:
     app: smtp
   sessionAffinity: None
@@ -414,6 +431,14 @@ metadata:
 spec:
   type: ClusterIP
   ports:
+    - name: proxied-tcp-465
+      port: 465
+      targetPort: 465
+      protocol: TCP
+    - name: proxied-tcp-995
+      port: 995
+      targetPort: 995
+      protocol: TCP
     - name: proxied-tcp-993
       port: 993
       targetPort: 993
@@ -433,6 +458,8 @@ apiVersion: v1
 data:
   "587": kubepanel/smtp:587
   "993": kubepanel/smtp:993
+  "995": kubepanel/smtp:995
+  "465": kubepanel/smtp:465
 kind: ConfigMap
 metadata:
   name: nginx-ingress-tcp-microk8s-conf

@@ -13,9 +13,10 @@ do
       kubectl patch configmap nginx-load-balancer-microk8s-conf -n ingress --type merge --patch "$(cat "${dir}"*.yaml)"
     else
       echo "→ Applying all manifests in $dir"
-      python3 /kubepanel/manage.py add_log --model dashboard.domain --lookup domain_name=$dir --actor system --message "Start applying kubernetes manifests for $dir" --level INFO
+      domain=$(basename "${dir%/}")
+      python3 /kubepanel/manage.py add_log --model dashboard.domain --lookup domain_name=$domain --actor system --message "Start applying kubernetes manifests for $domain" --level INFO
       kubectl apply -f "$dir"
-      python3 /kubepanel/manage.py add_log --model dashboard.domain --lookup domain_name=$dir --actor system --message "Finished applying kubernetes manifests for $dir" --level INFO
+      python3 /kubepanel/manage.py add_log --model dashboard.domain --lookup domain_name=$domain --actor system --message "Finished applying kubernetes manifests for $domain" --level INFO
     fi
 
     rm -rf "$dir"

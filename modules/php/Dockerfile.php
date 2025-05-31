@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y \
     sendmail \
     && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd -g 1000 webgroup && \
-    useradd -u 1000 -g webgroup -m webuser
+RUN groupadd -g 7777 webgroup && \
+    useradd -u 7777 -g webgroup -m webuser
 RUN ln -sf /proc/1/fd/1 /var/log/php7.4-fpm.log
 COPY www.conf /etc/php/7.4/fpm/pool.d/www.conf
 COPY php-fpm.conf /etc/php/7.4/fpm/php-fpm.conf

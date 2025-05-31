@@ -1,5 +1,9 @@
 smtp      inet  n       -       n       -       1       postscreen
     -o smtpd_sasl_auth_enable=no
+smtps     inet  n       -       y       -       -       smtpd
+    -o syslog_name=postfix/smtps
+    -o smtpd_tls_wrappermode=yes
+    -o smtpd_sasl_auth_enable=yes 
 dnsblog   unix  -       -       n       -       0       dnsblog
 postscreen  unix  n       -       y       -       1 postscreen
   -o postscreen_greet_action=enforce
