@@ -38,6 +38,8 @@ if [ -d "$DIR" ]; then
         echo "  NODE_3_IP=$NODE_3_IP"
 
         /usr/local/bin/python $DIR/manage.py firstrun -d $KUBEPANEL_DOMAIN
+        /usr/local/bin/python $DIR/manage.py loaddata $DIR/dashboard/fixtures/phpimages.json
+
     else
         echo $(date)
         echo "Directory is not empty."
