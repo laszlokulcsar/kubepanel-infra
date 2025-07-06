@@ -1,5 +1,5 @@
 #!/bin/bash
-# Directory to check
+set -euo pipefail
 DIR="/kubepanel"
 mysql -h mariadb.kubepanel.svc.cluster.local -uroot -p$MARIADB_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $DBNAME; GRANT ALL PRIVILEGES ON $DBNAME.* TO $DBNAME@'%' IDENTIFIED BY '$MARIADB_ROOT_PASSWORD'"
 mysql -h mariadb.kubepanel.svc.cluster.local -uroot -p$MARIADB_ROOT_PASSWORD_RC -e "CREATE DATABASE IF NOT EXISTS $DBNAME_RC; GRANT ALL PRIVILEGES ON $DBNAME_RC.* TO $DBNAME_RC@'%' IDENTIFIED BY '$MARIADB_ROOT_PASSWORD_RC'"
