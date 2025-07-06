@@ -2,14 +2,14 @@
 set -euo pipefail
 DIR="/kubepanel"
 mysql -h mariadb.kubepanel.svc.cluster.local -uroot -p$MARIADB_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $DBNAME; GRANT ALL PRIVILEGES ON $DBNAME.* TO $DBNAME@'%' IDENTIFIED BY '$MARIADB_ROOT_PASSWORD'"
-mysql -h mariadb.kubepanel.svc.cluster.local -uroot -p$MARIADB_ROOT_PASSWORD_RC -e "CREATE DATABASE IF NOT EXISTS $DBNAME_RC; GRANT ALL PRIVILEGES ON $DBNAME_RC.* TO $DBNAME_RC@'%' IDENTIFIED BY '$MARIADB_ROOT_PASSWORD_RC'"
+mysql -h mariadb.kubepanel.svc.cluster.local -uroot -p$MARIADB_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $DBNAME_RC; GRANT ALL PRIVILEGES ON $DBNAME_RC.* TO $DBNAME_RC@'%' IDENTIFIED BY '$MARIADB_ROOT_PASSWORD_RC'"
 # Check if directory exists
 if [ -d "$DIR" ]; then
     # Check if directory is empty
     entries=$(ls -A "$DIR")
     if [ -z "$entries" ] || [ "$entries" = "lost+found" ];  then
         echo "Directory is empty. Cloning repository..."
-        rmdir "$DIR/lost+found"
+        if [ "$entries" = "lost+found" ]; then rmdir "$DIR/lost+found"; fi
         git clone https://github.com/laszlokulcsar/kubepanel.git "$DIR" && mkdir $DIR/yaml_templates
         #DJANGO_SUPERUSER_EMAIL DJANGO_SUPERUSER_USERNAME DJANGO_SUPERUSER_PASSWORD KUBEPANEL_DOMAIN env variables should be set for the following command
         sed -i "s;<KUBEPANEL_DOMAIN>;$KUBEPANEL_DOMAIN;g" $DIR/kubepanel/settings.py
@@ -37,8 +37,8 @@ if [ -d "$DIR" ]; then
         echo "  NODE_2_IP=$NODE_2_IP"
         echo "  NODE_3_IP=$NODE_3_IP"
 
-        /usr/local/bin/python $DIR/manage.py firstrun -d $KUBEPANEL_DOMAIN
         /usr/local/bin/python $DIR/manage.py loaddata $DIR/dashboard/fixtures/phpimages.json
+        /usr/local/bin/python $DIR/manage.py firstrun -d $KUBEPANEL_DOMAIN
 
     else
         echo $(date)
