@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 DIR="/kubepanel"
+DKIMDIR="/dkim-privkeys/$KUBEPANEL_DOMAIN"
 mysql -h mariadb.kubepanel.svc.cluster.local -uroot -p$MARIADB_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $DBNAME; GRANT ALL PRIVILEGES ON $DBNAME.* TO $DBNAME@'%' IDENTIFIED BY '$MARIADB_ROOT_PASSWORD'"
 mysql -h mariadb.kubepanel.svc.cluster.local -uroot -p$MARIADB_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $DBNAME_RC; GRANT ALL PRIVILEGES ON $DBNAME_RC.* TO $DBNAME_RC@'%' IDENTIFIED BY '$MARIADB_ROOT_PASSWORD_RC'"
 # Check if directory exists
@@ -18,7 +19,7 @@ if [ -d "$DIR" ]; then
         /usr/local/bin/python $DIR/manage.py migrate
         /usr/local/bin/python $DIR/manage.py createsuperuser --noinput
 
-        echo "Gathering NODE_*_IP values from ConfigMap 'node-public-ips'…"
+        echo "Gathering NODE_*_IP values from ConfigMap 'node-public-ips'"
         mapfile -t node_ips < <(
           kubectl get configmap node-public-ips -n kubepanel \
             -o go-template='{{range $k, $v := .data}}{{println $v}}{{end}}' \
@@ -38,6 +39,10 @@ if [ -d "$DIR" ]; then
         echo "  NODE_3_IP=$NODE_3_IP"
 
         /usr/local/bin/python $DIR/manage.py loaddata $DIR/dashboard/fixtures/phpimages.json
+        if [ -d "$DKIMDIR" ]; then
+           rm "$DKIMDIR/$KUBEPANEL_DOMAIN.key"
+           rmdir "$DKIMDIR"
+        fi
         /usr/local/bin/python $DIR/manage.py firstrun -d $KUBEPANEL_DOMAIN
 
     else
