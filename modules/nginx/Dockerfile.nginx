@@ -24,7 +24,7 @@ RUN chown -R webuser:webgroup /var/www/html
 
 # Run Nginx and PHP-FPM as non-root user
 USER webuser
-
+RUN ln -sf /proc/1/fd/1 /var/log/nginx/access.log
 # Expose port 8080 for Nginx (non-root users can't bind to ports below 1024)
 EXPOSE 8080
 # Start Nginx and PHP-FPM on container start

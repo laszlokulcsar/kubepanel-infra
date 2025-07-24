@@ -1,0 +1,4 @@
+FROM laszlokulcsar/kubepanelbase:v0.1
+USER root
+COPY restore-watchdog_entrypoint.sh /entrypoint.sh
+ENTRYPOINT /entrypoint.sh
