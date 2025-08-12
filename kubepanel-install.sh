@@ -99,6 +99,20 @@ download_yaml() {
     fi
 }
 
+get_external_ips() {
+    # Wait a moment for ConfigMap to be populated
+    sleep 5
+    
+    # Get external IPs from ConfigMap
+    EXTERNAL_IPS=()
+    if [ "$DEBUG_MODE" = "true" ]; then
+        mapfile -t EXTERNAL_IPS < <(microk8s kubectl get configmap node-public-ips -n kubepanel -o jsonpath='{.data}' | grep -oE '"[^"]+":"[^"]+"' | sed 's/"//g' | sed 's/:/: /')
+    else
+        mapfile -t EXTERNAL_IPS < <(microk8s kubectl get configmap node-public-ips -n kubepanel -o jsonpath='{.data}' 2>/dev/null | grep -oE '"[^"]+":"[^"]+"' | sed 's/"//g' | sed 's/:/: /')
+    fi
+}
+
+
 replace_placeholders() {
     local file=$1
     local email=$2
@@ -278,6 +292,9 @@ main() {
     print_waiting "Finalizing storage setup (10-15 minutes)..."
     run_cmd microk8s kubectl delete daemonset node-ip-updater -n kubepanel
     
+    print_progress "Retrieving external IP addresses..."
+    get_external_ips
+    
     # Final success message with DNS instructions
     echo -e "\n${GREEN}"
     echo "╔═══════════════════════════════════════════════════════════════════════╗"
@@ -292,14 +309,29 @@ main() {
     echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║                          DNS CONFIGURATION                        ║${NC}"
     echo -e "${BLUE}╠════════════════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC} ${YELLOW}Cluster Node IPs:${NC}"
+    echo -e "${BLUE}║${NC} ${YELLOW}Internal Node IPs:${NC}"
     for i in "${!CLUSTER_NODE_IPS[@]}"; do
         printf "${BLUE}║${NC}   Node $((i+1)): ${GREEN}%-52s${NC}${BLUE}║${NC}\n" "${CLUSTER_NODE_IPS[i]}"
     done
     echo -e "${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC} ${YELLOW}DNS Setup Required:${NC}"
-    echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}$KUBEPANEL_DOMAIN${NC}"
-    echo -e "${BLUE}║${NC}   Point it to at least one of the IP addresses above"
+    
+    # Display external IPs if available
+    if [ ${#EXTERNAL_IPS[@]} -gt 0 ]; then
+        echo -e "${BLUE}║${NC} ${YELLOW}External Node IPs:${NC}"
+        for ip_mapping in "${EXTERNAL_IPS[@]}"; do
+            printf "${BLUE}║${NC}   ${GREEN}%-60s${NC}${BLUE}║${NC}\n" "$ip_mapping"
+        done
+        echo -e "${BLUE}║${NC}"
+        echo -e "${BLUE}║${NC} ${YELLOW}DNS Setup Required:${NC}"
+        echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}$KUBEPANEL_DOMAIN${NC}"
+        echo -e "${BLUE}║${NC}   Point it to one of the ${YELLOW}EXTERNAL${NC} IP addresses above"
+    else
+        echo -e "${BLUE}║${NC} ${YELLOW}DNS Setup Required:${NC}"
+        echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}$KUBEPANEL_DOMAIN${NC}"
+        echo -e "${BLUE}║${NC}   Point it to at least one of the internal IP addresses above"
+        echo -e "${BLUE}║${NC}   ${YELLOW}Note:${NC} External IPs not yet available in ConfigMap"
+    fi
+    
     echo -e "${BLUE}║${NC}"
     echo -e "${BLUE}║${NC} ${RED}⚠️  Important:${NC} Kubepanel will not be accessible until"
     echo -e "${BLUE}║${NC}   the DNS record is configured correctly!"
