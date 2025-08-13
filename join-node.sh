@@ -103,16 +103,9 @@ main() {
     echo -e "\n${GREEN}"
     echo "╔═══════════════════════════════════════════════════════════════════════╗"
     echo "║                    🎉 NODE PREPARATION COMPLETED! 🎉                  ║"
+    echo "║                 Get the join command from your main node              ║"
     echo "╚═══════════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    
-    echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║                           NEXT STEP                                ║${NC}"
-    echo -e "${BLUE}╠════════════════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC} ${YELLOW}1. Get the join command from your main node:${NC}"
-    echo -e "${BLUE}╚════════════════════════════════════════════════════════════════════╝${NC}"
-    
-    echo -e "\n${CYAN}This node is now ready to join your Kubepanel cluster!${NC}\n"
 }
 
 main
