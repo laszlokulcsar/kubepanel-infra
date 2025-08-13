@@ -320,23 +320,23 @@ main() {
     
     print_progress "Retrieving external IP addresses..."
     get_external_ips
-    
+
     # Final success message with DNS instructions
     echo -e "\n${GREEN}"
     echo "╔═══════════════════════════════════════════════════════════════════════╗"
-    echo "║                    🎉 INSTALLATION COMPLETED! 🎉                     ║"
+    echo "║                    🎉 INSTALLATION COMPLETED! 🎉                      ║"
     echo "║                                                                       ║"
     echo "║  Kubepanel is now ready to use at: https://$KUBEPANEL_DOMAIN"
-    printf "%-71s║\n" "║  Login with your configured credentials"
+    echo "║  Login with your configured credentials                               ║"
     echo "╚═══════════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    
+
     # Display node IPs and DNS instructions
     echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║                          DNS CONFIGURATION                        ║${NC}"
+    echo -e "${BLUE}║                          DNS CONFIGURATION                         ║${NC}"
     echo -e "${BLUE}╠════════════════════════════════════════════════════════════════════╣${NC}"
     echo -e "${BLUE}║${NC}"
-    
+
     # Display external IPs if available
     if [ ${#EXTERNAL_IPS[@]} -gt 0 ]; then
         echo -e "${BLUE}║${NC} ${YELLOW}External Node IPs:${NC}"
@@ -346,21 +346,25 @@ main() {
         echo -e "${BLUE}║${NC}"
         echo -e "${BLUE}║${NC} ${YELLOW}DNS Setup Required:${NC}"
         echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}$KUBEPANEL_DOMAIN${NC}"
+        echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}webmail.$KUBEPANEL_DOMAIN${NC}"
+        echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}phpmyadmin.$KUBEPANEL_DOMAIN${NC}"
         echo -e "${BLUE}║${NC}   Point it to at least one of the ${YELLOW}EXTERNAL${NC} IP addresses above"
     else
         echo -e "${BLUE}║${NC} ${YELLOW}DNS Setup Required:${NC}"
         echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}$KUBEPANEL_DOMAIN${NC}"
+        echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}webmail.$KUBEPANEL_DOMAIN${NC}"
+        echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}phpmyadmin.$KUBEPANEL_DOMAIN${NC}"
         echo -e "${BLUE}║${NC}   Point it to at least one of the internal IP addresses above"
         echo -e "${BLUE}║${NC}   ${YELLOW}Note:${NC} External IPs not yet available in ConfigMap"
     fi
-    
+
     echo -e "${BLUE}║${NC}"
     echo -e "${BLUE}║${NC} ${RED}⚠️  Important:${NC} Kubepanel will not be accessible until"
     echo -e "${BLUE}║${NC}   the DNS record is configured correctly!"
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════════════╝${NC}"
-    
+
     echo -e "\n${CYAN}Please configure your DNS and then access Kubepanel at:${NC}"
-    echo -e "${GREEN}https://$KUBEPANEL_DOMAIN${NC}\n"
+    echo -e "${GREEN}https://$KUBEPANEL_DOMAIN${NC}\n"    
 }
 
 main
