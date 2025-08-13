@@ -16,7 +16,7 @@ print_header() {
     echo -e "${CYAN}"
     echo "╔═══════════════════════════════════════════════════════════════════════╗"
     echo "║                         KUBEPANEL INSTALLER                           ║"
-    echo "║                    Kubernetes Management Platform                     ║"
+    echo "║              Kubernetes based web hosting control panel               ║"
     echo "╚═══════════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
 }
