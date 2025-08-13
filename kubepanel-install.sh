@@ -335,10 +335,6 @@ main() {
     echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║                          DNS CONFIGURATION                        ║${NC}"
     echo -e "${BLUE}╠════════════════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC} ${YELLOW}Internal Node IPs:${NC}"
-    for i in "${!CLUSTER_NODE_IPS[@]}"; do
-        printf "${BLUE}║${NC}   Node $((i+1)): ${GREEN}%-52s${NC}${BLUE}║${NC}\n" "${CLUSTER_NODE_IPS[i]}"
-    done
     echo -e "${BLUE}║${NC}"
     
     # Display external IPs if available
@@ -350,7 +346,7 @@ main() {
         echo -e "${BLUE}║${NC}"
         echo -e "${BLUE}║${NC} ${YELLOW}DNS Setup Required:${NC}"
         echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}$KUBEPANEL_DOMAIN${NC}"
-        echo -e "${BLUE}║${NC}   Point it to one of the ${YELLOW}EXTERNAL${NC} IP addresses above"
+        echo -e "${BLUE}║${NC}   Point it to at least one of the ${YELLOW}EXTERNAL${NC} IP addresses above"
     else
         echo -e "${BLUE}║${NC} ${YELLOW}DNS Setup Required:${NC}"
         echo -e "${BLUE}║${NC}   Create an A record for: ${GREEN}$KUBEPANEL_DOMAIN${NC}"
