@@ -15,8 +15,8 @@ DEBUG_MODE=${KUBEPANEL_DEBUG:-false}
 print_header() {
     echo -e "${CYAN}"
     echo "╔═══════════════════════════════════════════════════════════════════════╗"
-    echo "║                      KUBEPANEL NODE JOINER                           ║"
-    echo "║                   Add Node to Kubepanel Cluster                     ║"
+    echo "║                      KUBEPANEL NODE JOINER                            ║"
+    echo "║                   Add Node to Kubepanel Cluster                       ║"
     echo "╚═══════════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
 }
