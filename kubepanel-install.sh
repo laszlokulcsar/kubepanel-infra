@@ -205,7 +205,7 @@ generate_join_command() {
         JOIN_COMMAND=$(microk8s add-node --token-ttl 3600 2>/dev/null | head -n 2)
     fi
     echo -e "\n${GREEN}╔════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║                     CLUSTER JOIN COMMAND                          ║${NC}"
+    echo -e "${GREEN}║                     CLUSTER JOIN COMMAND                           ║${NC}"
     echo -e "${GREEN}╠════════════════════════════════════════════════════════════════════╣${NC}"
     printf "${GREEN}║${NC} ${YELLOW}%s${NC}\n" "$JOIN_COMMAND"
     echo -e "${GREEN}╚════════════════════════════════════════════════════════════════════╝${NC}\n"
