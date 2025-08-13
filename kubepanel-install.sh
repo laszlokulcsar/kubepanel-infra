@@ -21,6 +21,32 @@ print_header() {
     echo -e "${NC}"
 }
 
+prompt_password() {
+    local prompt_message=$1
+    local var_name=$2
+    local password
+    local password_confirm
+    
+    while true; do
+        printf "${YELLOW}==> %s: ${NC}" "$prompt_message"
+        read -s password
+        echo ""
+        
+        printf "${YELLOW}==> Re-enter password to confirm: ${NC}"
+        read -s password_confirm
+        echo ""
+        
+        if [ "$password" = "$password_confirm" ]; then
+            eval "$var_name='$password'"
+            print_success "Password confirmed"
+            break
+        else
+            echo -e "  ${RED}✗${NC} Passwords do not match. Please try again."
+            echo ""
+        fi
+    done
+}
+
 print_step() {
     local step_num=$1
     local step_name=$2
@@ -259,10 +285,10 @@ main() {
     
     print_step "7" "Kubernetes Operators"
     print_progress "Installing Piraeus storage operator..."
-    run_cmd microk8s kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.9.0"
+    run_cmd kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.9.0"
     print_progress "Installing snapshot controller..."
-    run_cmd microk8s kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
-    run_cmd microk8s kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
+    run_cmd kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
+    run_cmd kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
     print_success "Kubernetes operators installed"
     
     print_step "8" "Kubepanel Configuration"
@@ -270,7 +296,7 @@ main() {
     YAML_FILE="kubepanel-install.yaml"
     prompt_user_input "Enter Superuser email address" DJANGO_SUPERUSER_EMAIL
     prompt_user_input "Enter Superuser username" DJANGO_SUPERUSER_USERNAME
-    prompt_user_input "Enter Superuser password" DJANGO_SUPERUSER_PASSWORD
+    prompt_password "Enter Superuser password" DJANGO_SUPERUSER_PASSWORD
     prompt_user_input "Enter Kubepanel domain name" KUBEPANEL_DOMAIN
     
     print_progress "Downloading Kubepanel configuration..."
@@ -285,7 +311,7 @@ main() {
     print_success "Piraeus operator ready"
     
     print_progress "Deploying Kubepanel..."
-    run_cmd microk8s kubectl apply -f $YAML_FILE
+    run_cmd kubectl apply -f $YAML_FILE
     
     check_deployment_status
     
