@@ -44,6 +44,12 @@ print_success() {
     echo -e "  ${GREEN}✓${NC} $message"
 }
 
+prompt_user_input() {
+    local prompt_message=$1
+    local var_name=$2
+    read -rp "$(printf "${YELLOW}==> %s: ${NC}" "$prompt_message")" $var_name
+}
+
 # Function to run commands with optional debug output
 run_cmd() {
     if [ "$DEBUG_MODE" = "true" ]; then
@@ -51,6 +57,20 @@ run_cmd() {
     else
         "$@" >/dev/null 2>&1
     fi
+}
+
+run_cmd_critical() {
+    if [ "$DEBUG_MODE" = "true" ]; then
+        "$@"
+    else
+        "$@" >/dev/null 2>&1
+    fi
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo -e "\n  ${RED}✗${NC} Critical command failed with exit code $exit_code: $*"
+        exit 1
+    fi
+    return 0
 }
 
 # Function to run commands and capture exit status while hiding output
@@ -88,10 +108,32 @@ main() {
     print_success "MicroK8S installed"
     
     print_step "3" "Storage Configuration"
-    print_progress "Creating LVM volume group..."
-    run_cmd vgcreate linstorvg /dev/sdb
-    print_progress "Creating logical volume..."
-    run_cmd lvcreate -l100%FREE -T linstorvg/linstorlv
+    prompt_user_input "Enter storage device name [default: /dev/sdb]" STORAGE_DEVICE
+    STORAGE_DEVICE=${STORAGE_DEVICE:-/dev/sdb}
+    
+    # Validate that the device exists
+    if [ ! -b "$STORAGE_DEVICE" ]; then
+        echo -e "  ${RED}✗${NC} Error: Device $STORAGE_DEVICE does not exist or is not a block device"
+        echo -e "  ${YELLOW}Available block devices:${NC}"
+        lsblk -d -o NAME,SIZE,TYPE | grep disk
+        exit 1
+    fi
+    
+    print_progress "Setting up LVM storage on $STORAGE_DEVICE..."
+    
+    # Check if VG already exists
+    if vgs linstorvg >/dev/null 2>&1; then
+        echo -e "  ${YELLOW}⚠${NC} Volume group 'linstorvg' already exists, skipping creation"
+    else
+        run_cmd_critical vgcreate linstorvg "$STORAGE_DEVICE"
+    fi
+    
+    # Check if LV already exists
+    if lvs linstorvg/linstorlv >/dev/null 2>&1; then
+        echo -e "  ${YELLOW}⚠${NC} Logical volume 'linstorlv' already exists, skipping creation"
+    else
+        run_cmd_critical lvcreate -l100%FREE -T linstorvg/linstorlv
+    fi
     print_success "Storage configured"
     
     print_step "4" "MicroK8S Initialization"

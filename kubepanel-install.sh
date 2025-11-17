@@ -92,6 +92,21 @@ run_cmd() {
     fi
 }
 
+# Function to run critical commands that must succeed
+run_cmd_critical() {
+    if [ "$DEBUG_MODE" = "true" ]; then
+        "$@"
+    else
+        "$@" >/dev/null 2>&1
+    fi
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo -e "\n  ${RED}✗${NC} Critical command failed with exit code $exit_code: $*"
+        exit 1
+    fi
+    return 0
+}
+
 # Function to run commands and capture exit status while hiding output
 run_cmd_check() {
     if [ "$DEBUG_MODE" = "true" ]; then
@@ -279,8 +294,24 @@ main() {
     
     print_step "6" "Storage Configuration"
     print_progress "Setting up LVM storage..."
-    run_cmd vgcreate linstorvg /dev/sdb
-    run_cmd lvcreate -l100%FREE -T linstorvg/linstorlv
+    prompt_user_input "Enter storage device name [default: /dev/sdb]" STORAGE_DEVICE
+    STORAGE_DEVICE=${STORAGE_DEVICE:-/dev/sdb}
+    if [ ! -b "$STORAGE_DEVICE" ]; then
+        echo -e "  ${RED}✗${NC} Error: Device $STORAGE_DEVICE does not exist or is not a block device"
+        echo -e "  ${YELLOW}Available block devices:${NC}"
+        lsblk -d -o NAME,SIZE,TYPE | grep disk
+        exit 1
+    fi
+    if vgs linstorvg >/dev/null 2>&1; then
+        echo -e "  ${YELLOW}⚠${NC} Volume group 'linstorvg' already exists, skipping creation"
+    else
+        run_cmd_critical vgcreate linstorvg "$STORAGE_DEVICE"
+    fi
+    if lvs linstorvg/linstorlv >/dev/null 2>&1; then
+        echo -e "  ${YELLOW}⚠${NC} Logical volume 'linstorlv' already exists, skipping creation"
+    else
+        run_cmd_critical lvcreate -l100%FREE -T linstorvg/linstorlv
+    fi
     print_success "Storage configured"
     
     print_step "7" "Kubernetes Operators"
