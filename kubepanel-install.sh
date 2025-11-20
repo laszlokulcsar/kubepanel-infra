@@ -316,10 +316,10 @@ main() {
     
     print_step "7" "Kubernetes Operators"
     print_progress "Installing Piraeus storage operator..."
-    run_cmd kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.9.0"
+    run_cmd_critical kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.9.0"
     print_progress "Installing snapshot controller..."
-    run_cmd kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
-    run_cmd kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
+    run_cmd_critical kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//client/config/crd
+    run_cmd_critical kubectl apply -k https://github.com/kubernetes-csi/external-snapshotter//deploy/kubernetes/snapshot-controller
     print_success "Kubernetes operators installed"
     
     print_step "8" "Kubepanel Configuration"
@@ -342,7 +342,7 @@ main() {
     print_success "Piraeus operator ready"
     
     print_progress "Deploying Kubepanel..."
-    run_cmd kubectl apply -f $YAML_FILE
+    run_cmd_critical kubectl apply -f $YAML_FILE
     
     check_deployment_status
     
