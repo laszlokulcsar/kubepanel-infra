@@ -22,14 +22,14 @@ print_header() {
 }
 
 check_root() {
-    if [ "$EUID" -ne 0 ]; then
+    if [ "$EUID" -ne 0 ]; then 
         echo -e "${RED}╔═══════════════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${RED}║                            ERROR                                      ║${NC}"
         echo -e "${RED}╠═══════════════════════════════════════════════════════════════════════╣${NC}"
-        echo -e "${RED}║${NC} This script must be run as root or with sudo privileges    ${RED}║${NC}"
-        echo -e "${RED}║${NC}                                                            ${RED}║${NC}"
-        echo -e "${RED}║${NC} Please run:                                                ${RED}║${NC}"
-        echo -e "${RED}║${NC}   ${YELLOW}sudo su - $0${NC}                               ${RED}║${NC}"
+        echo -e "${RED}║${NC} This script must be run as root or with sudo privileges          ${RED}║${NC}"
+        echo -e "${RED}║${NC}                                                                   ${RED}║${NC}"
+        echo -e "${RED}║${NC} Please run:                                                       ${RED}║${NC}"
+        echo -e "${RED}║${NC}   ${YELLOW}sudo su - ${NC}                                              ${RED}║${NC}"
         echo -e "${RED}╚═══════════════════════════════════════════════════════════════════════╝${NC}"
         exit 1
     fi

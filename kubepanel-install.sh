@@ -26,15 +26,14 @@ check_root() {
         echo -e "${RED}╔═══════════════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${RED}║                            ERROR                                      ║${NC}"
         echo -e "${RED}╠═══════════════════════════════════════════════════════════════════════╣${NC}"
-        echo -e "${RED}║${NC} This script must be run as root or with sudo privileges    ${RED}║${NC}"
-        echo -e "${RED}║${NC}                                                            ${RED}║${NC}"
-        echo -e "${RED}║${NC} Please run:                                                ${RED}║${NC}"
-        echo -e "${RED}║${NC}   ${YELLOW}sudo su - $0${NC}                               ${RED}║${NC}"
+        echo -e "${RED}║${NC} This script must be run as root or with sudo privileges          ${RED}║${NC}"
+        echo -e "${RED}║${NC}                                                                   ${RED}║${NC}"
+        echo -e "${RED}║${NC} Please run:                                                       ${RED}║${NC}"
+        echo -e "${RED}║${NC}   ${YELLOW}sudo su - ${NC}                                              ${RED}║${NC}"
         echo -e "${RED}╚═══════════════════════════════════════════════════════════════════════╝${NC}"
         exit 1
     fi
 }
-
 
 prompt_password() {
     local prompt_message=$1
