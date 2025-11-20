@@ -285,7 +285,7 @@ main() {
     print_progress "Enabling cert-manager addon..."
     run_cmd sudo microk8s enable cert-manager
     print_progress "Configuring kubectl access..."
-    sudo microk8s config > .kube/config
+    sudo microk8s config > ~/.kube/config
     print_success "Kubernetes addons enabled"
 
     print_step "5" "High Availability Setup"
