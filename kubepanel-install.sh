@@ -21,6 +21,21 @@ print_header() {
     echo -e "${NC}"
 }
 
+check_root() {
+    if [ "$EUID" -ne 0 ]; then 
+        echo -e "${RED}╔═══════════════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${RED}║                            ERROR                                      ║${NC}"
+        echo -e "${RED}╠═══════════════════════════════════════════════════════════════════════╣${NC}"
+        echo -e "${RED}║${NC} This script must be run as root or with sudo privileges    ${RED}║${NC}"
+        echo -e "${RED}║${NC}                                                            ${RED}║${NC}"
+        echo -e "${RED}║${NC} Please run:                                                ${RED}║${NC}"
+        echo -e "${RED}║${NC}   ${YELLOW}sudo su - $0${NC}                               ${RED}║${NC}"
+        echo -e "${RED}╚═══════════════════════════════════════════════════════════════════════╝${NC}"
+        exit 1
+    fi
+}
+
+
 prompt_password() {
     local prompt_message=$1
     local var_name=$2
@@ -251,6 +266,12 @@ main() {
         echo -e "${YELLOW}🐛 Debug mode enabled - showing all command output${NC}\n"
     fi
     
+    print_step "0" "Privilege Check"
+    print_progress "Verifying root privileges..."
+    check_root
+    print_success "Running with root privileges"
+
+
     print_step "1" "System Preparation"
     print_progress "Stopping and disabling multipathd..."
     run_cmd sudo systemctl stop multipathd
